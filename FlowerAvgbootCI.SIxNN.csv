@@ -1,0 +1,13 @@
+﻿Neonic,Social_Cue,pre.post,AvgbootLO,AvgbootHI
+n,honest,post,2.852,3.884
+n,misleading,post,3.1,4.36
+n,control,post,3.826,5
+y,honest,post,3.431,5.034
+y,misleading,post,3.077,4.75
+y,control,post,3.304,4.804
+n,honest,pre,4.722,6.739
+n,misleading,pre,2.827,4.846
+n,control,pre,4.143,6.184
+y,honest,pre,3.216,5.704
+y,misleading,pre,2.458,5.917
+y,control,pre,3.857,5.893
