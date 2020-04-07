@@ -5,7 +5,6 @@ date: "4/6/2020"
 output: html_document
 ---
 
-check checcccccck
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 #knitr::opts_chunk$set(root.dir='/tmp')
@@ -20,6 +19,7 @@ require(wesanderson)
 require(car)
 require(binom)
 require(boot)
+require(tidyverse)
 getwd()
 ```
 This data was collected in April of 2019 as a follow up on last summer's social information experiment. In this experiment as in the last one, bees were tasked with foraging on two flowers over two days. On day one, their flower choices were blue (rewarding) or green (water). On day two, the same bees were placed in the same enclosures to forage on either blue (still the samelevel of reward) or purple (equally rewarding) flowers. Again, bees were assigned to different treatments with different social information cues on day one: honest (model bee on blue flower), misleading (model bee on green flower), or control (no model bee.) However, the change from my last experiments is that, this time, bees were in one of two treatments for 3 days preceding the trial: neonic-exposed and not neonic exposed. Neonic exposure (10 ppb) was through their ad. lib. supply of 1 M nectar.
@@ -743,7 +743,8 @@ Check3=filter(all.colordata, Colony=="4")
 
 #Prepping to melt data
 
-
+Trtmnt=read.csv("Trtmnt.csv")
+all.colordata=full_join(all.colordata,Trtmnt, by="Treatment_Type")
 
 all.sum.colordata=all.colordata %>%
   group_by(Neonic, Treatment_Type, Colony, color)  %>%
@@ -751,8 +752,7 @@ all.sum.colordata=all.colordata %>%
 
 
 
-Trtmnt=read.csv("Trtmnt.csv")
-all.colordata=full_join(all.colordata,Trtmnt, by="Treatment_Type")
+
 
 
 
@@ -1485,36 +1485,64 @@ plot3 <- ggplot(RewardsPerTreatment2, aes(group=Combo, color = Combo, y = AvgBlu
 
 plot3
 
-```
 
 #Analyzing Bee Reward Order
 
-template=
+template:
 sis32=sis3 %>%
   group_by(Sister) %>%
   mutate(Order2=1:n())
   
-
-
-
 There are NAs coming up in the ordered data and the switch data which follows. That's recording a tag (for 1B-29 and 60-27) that wasn't part of any treatment or colony types. I think it's maybe a short-term tester tag? Regardless, it's two "bees"" that aren't anywhere on the Bombus ID data spreadsheet (which is hand-typed to include all bees which are tagged). So I'm deleting them.
 
-``{r}
+
+Had as issue with NAs popping up in ways that don't make sense (e.g. as a factor level for Social_Cue, when in reality are social_cue levels are accounted for.)
+
+possible solution from internet: https://forcats.tidyverse.org/reference/fct_explicit_na.html
+
+f1 <- factor(c("a", "a", NA, NA, "a", "b", NA, "c", "a", "c", "b"))
+fct_count(f1)
+#> # A tibble: 4 x 2
+#>   f         n
+#>   <fct> <int>
+#> 1 a         4
+#> 2 b         2
+#> 3 c         2
+#> 4 NA        3
+
+f2 <- fct_explicit_na(f1)
+fct_count(f2)
+#> # A tibble: 4 x 2
+#>   f             n
+#>   <fct>     <int>
+#> 1 a             4
+#> 2 b             2
+#> 3 c             2
+#> 4 (Missing)     3
+
+
+
+
+```{r}
+
 OrderableData=all.colordata %>%
-  select(bee, Neonic, Treatment_Type, reward.x, color, Day, Colony, t.forage)
+  select(bee, Neonic, Social_Cue, reward.x, color, Day, Colony, t.forage)
 OrderableData=OrderableData %>%
   filter(reward.x==1) 
 OrderableData=OrderableData %>%
-  arrange(bee, t.forage) %>%
-  group_by(bee) %>%
+  arrange(bee, Day, t.forage) %>%
+  group_by(bee, Day) %>%
   mutate(Order=1:n())
+
+
+
 
 Check5=filter(OrderableData, Colony=="4")
 
 #Separate day 1 and day 2
 
 Day1order=all.colordata %>%
-  select(bee, Neonic, Treatment_Type, reward.x, color, Day, Colony, t.forage) %>%
+  select(bee, Neonic, Social_Cue, reward.x, color, Day, Colony, t.forage) %>%
   filter(reward.x==1, Day=="treatment") %>%
   arrange(bee, t.forage) %>%
   group_by(bee) %>%
@@ -1529,7 +1557,7 @@ Day1order=filter(Day1order, bee != "1B-29-66-01-0B-00-12-E0")
 Day1order=filter(Day1order, bee != "60-27-66-01-0B-00-12-E0")
 
 Day2order=all.colordata %>%
-  select(bee, Neonic, Treatment_Type, reward.x, color, Day, Colony, t.forage) %>%
+  select(bee, Neonic, Social_Cue, reward.x, color, Day, Colony, t.forage) %>%
   filter(reward.x==1, Day=="test") %>%
   arrange(bee, t.forage) %>%
   group_by(bee) %>%
@@ -1539,59 +1567,75 @@ Day2order=all.colordata %>%
 #have to melt data again to make graph
 Meltable.Day1order= Day1order %>%
   ungroup() %>%
-  select(Order, Neonic, Treatment_Type, color) %>%
-  group_by(Neonic, Treatment_Type, Order) %>%
-  arrange(Neonic, Treatment_Type, Order) %>%
-  count(Neonic, Treatment_Type, color, Order)
+  select(Order, Neonic, Social_Cue, color) %>%
+  group_by(Neonic, Social_Cue, Order) %>%
+  arrange(Neonic, Social_Cue, Order) %>%
+  count(Neonic, Social_Cue, color, Order)
+
+Meltable.Day1order$Neonic<- fct_explicit_na(Meltable.Day1order$Neonic)
+Meltable.Day1order$Social_Cue<- fct_explicit_na(Meltable.Day1order$Social_Cue)
+
+Meltable.Day1order= filter(Meltable.Day1order, Neonic != "(Missing)")
+
 
 Spread.Day1order=spread(data=Meltable.Day1order, key=color, value=n)
+Spread.Day1order$blue.treatment[is.na(Spread.Day1order$blue.treatment)] <- 0 
+Spread.Day1order$green.treatment[is.na(Spread.Day1order$green.treatment)] <- 0
+
+Spread.Day1order=mutate(Spread.Day1order,BluePref=blue.treatment/(blue.treatment+green.treatment))
 
 #Somehow in the spread I created a bunch of rows that were NA for treament and neonic. However, all of my levels for all of those factors are present, so I'm gonna assume that's junk right now.
 
 Meltable.Day2order= Day2order %>%
   ungroup() %>%
-  select(Order, Neonic, Treatment_Type, color) %>%
-  group_by(Neonic, Treatment_Type, Order) %>%
-  arrange(Neonic, Treatment_Type, Order) %>%
-  count(Neonic, Treatment_Type, color, Order)
+  select(Order, Neonic, Social_Cue, color) %>%
+  group_by(Neonic, Social_Cue, Order) %>%
+  arrange(Neonic, Social_Cue, Order) %>%
+  count(Neonic, Social_Cue, color, Order)
+
+Meltable.Day2order$Neonic<- fct_explicit_na(Meltable.Day2order$Neonic)
+Meltable.Day2order$Social_Cue<- fct_explicit_na(Meltable.Day2order$Social_Cue)
+
+Meltable.Day2order= filter(Meltable.Day2order, Neonic != "(Missing)")
 
 Spread.Day2order=spread(data=Meltable.Day2order, key=color, value=n)
-Spread.Day2order[is.na(Spread.Day2order)] <-0
+Spread.Day2order$blue.test[is.na(Spread.Day2order$blue.test)] <- 0 
+Spread.Day2order$violet.test[is.na(Spread.Day2order$violet.test)] <- 0
 
 Spread.Day2order=mutate(Spread.Day2order, BluePref=blue.test/(blue.test+violet.test))
 
-Day2OrderPlot=ggplot(data=Spread.Day2order, aes(group=Treatment_Type, color=Treatment_Type, x=Order, y=BluePref)) + facet_grid(.~Neonic) + geom_point(position=pd, size=1) + geom_line(aes(group=Treatment_Type), position=pd) +theme_classic()
+Day2OrderPlot=ggplot(data=Spread.Day2order, aes(group=Social_Cue, color=Social_Cue, x=Order, y=BluePref)) + facet_grid(.~Neonic) + geom_point(position=pd, size=1) + geom_line(aes(group=Social_Cue), position=pd) +theme_classic()
 Day2OrderPlot
 
-SameDay2OrderPlot=ggplot(data=Spread.Day2order, aes(group=Treatment_Type, color=Treatment_Type, x=Order, y=BluePref)) + facet_grid(.~Neonic) + geom_point(position=pd, size=1) + geom_line(aes(group=Treatment_Type), position=pd) +theme_classic()+ coord_cartesian(xlim = c(1,5))+ labs(title="Bees' Preference for Blue Flowers on Day 2, Choices 1-5")
+SameDay2OrderPlot=ggplot(data=Spread.Day2order, aes(group=Social_Cue, color=Social_Cue, x=Order, y=BluePref)) + facet_grid(.~Neonic) + geom_point(position=pd, size=1) + geom_line(aes(group=Social_Cue), position=pd) +theme_classic()+ coord_cartesian(xlim = c(1,5))+ labs(title="Bees' Preference for Blue Flowers on Day 2, Choices 1-5")
 SameDay2OrderPlot
 #there are also NAs where there should be 0s. changing those...
 
-Spread.Day1order[is.na(Spread.Day1order)] <-0
+#Spread.Day1order[is.na(Spread.Day1order)] <-0
 #Spread.Day1order.Clean=slice(Spread.Day1order, 1:83)
 #index1 = which(is.na(Spread.Day1order.Clean))
 #Spread.Day1order.Clean = Spread.Day1order.Clean[-index1,]
 
-Spread.Day1order=mutate(Spread.Day1order,BluePref=blue.treatment/(blue.treatment+green.treatment))
 
-Day1OrderPlot=ggplot(data=Spread.Day1order, aes(group=Treatment_Type, color=Treatment_Type, x=Order, y=BluePref)) + facet_grid(.~Neonic) + geom_point(position=pd, size=1) + geom_line(aes(group=Treatment_Type), position=pd) +theme_classic()  + labs(title="Bees' Preference for Blue Flowers on Day 1")
+
+Day1OrderPlot=ggplot(data=Spread.Day1order, aes(group=Social_Cue, color=Social_Cue, x=Order, y=BluePref)) + facet_grid(.~Neonic) + geom_point(position=pd, size=1) + geom_line(aes(group=Social_Cue), position=pd) +theme_classic()  + labs(title="Bees' Preference for Blue Flowers on Day 1")
 Day1OrderPlot
 
 #same plot as above, but artificialy limited to the average number of visits that at leat 10 bees made (i.e. up to 6 on x axis)
 
-SameDay1OrderPlot=ggplot(data=Spread.Day1order, aes(group=Treatment_Type, color=Treatment_Type, x=Order, y=BluePref)) + facet_grid(.~Neonic) + geom_point(position=pd, size=1) + geom_line(aes(group=Treatment_Type), position=pd) +theme_classic() + coord_cartesian(xlim = c(1,5))+ labs(title="Bees' Preference for Blue Flowers on Day 1, Choices 1-5")
+SameDay1OrderPlot=ggplot(data=Spread.Day1order, aes(group=Social_Cue, color=Social_Cue, x=Order, y=BluePref)) + facet_grid(.~Neonic) + geom_point(position=pd, size=1) + geom_line(aes(group=Social_Cue), position=pd) +theme_classic() + coord_cartesian(xlim = c(1,5))+ labs(title="Bees' Preference for Blue Flowers on Day 1, Choices 1-5")
 SameDay1OrderPlot
 
 
 #Plotting individual bees
 #Order.colordata=full_join(1OrderableData, color.treatments, by="color")
-Allbee.Order.Day1=select(Day1order, bee, Neonic, Treatment_Type, Order,color)
+Allbee.Order.Day1=select(Day1order, bee, Neonic, Social_Cue, Order,color)
 #index = which(is.na(Allbee.Order.Day1))
 #Allbee.Order.Day1 = Allbee.Order.Day1[-index,]
 
 
-AllbeeDay1Plot=ggplot(data=Allbee.Order.Day1, aes(group=bee, color=bee, x=Order, y=color)) + facet_grid(Neonic~Treatment_Type) + geom_point( size=1) + geom_line(aes(group=bee)) +theme_classic()+ guides(color="none")
-AllbeeDay1Plot
+AllbeeDay1Plot=ggplot(data=Allbee.Order.Day1, aes(group=bee, color=bee, x=Order, y=color)) + facet_grid(Neonic~Social_Cue) + geom_point( size=1) + geom_line(aes(group=bee)) +theme_classic()+ guides(color="none")
+#AllbeeDay1Plot
 #+ coord_cartesian(xlim = c(1,5))
 ```
 all.colormelt=melt(meltable.colordata)
@@ -1614,6 +1658,8 @@ meltable.colordata$Colony <-as.character(as.numeric(meltable.colordata$Colony))
 
 summary(all.colorcast)
 
+
+
 #Switching Flowers
 
 code from Practice.rmd 
@@ -1632,9 +1678,8 @@ sis37
 sis38=as.data.frame(sis37)
 sis38=select(sis38, Sister, State, Children, Order2, Swatch)
 sis38
-``{r}
 
-
+```{r}
 Day1orderM=as.matrix(Day1order)
 Switch=c("Start")
 for(i in 2:nrow(Day1orderM)){
@@ -1648,36 +1693,41 @@ Day1orderSwitch=as.data.frame(Day1orderS)
 #Preparing Data to plot
 SMeltable.Day1order=Day1orderSwitch %>%
   ungroup() %>%
-  select(Switch, Neonic, Treatment_Type) %>%
-  group_by(Neonic, Treatment_Type, Switch) %>%
-  arrange(Neonic, Treatment_Type, Switch) %>%
-  count(Neonic, Treatment_Type, Switch) 
+  select(Switch, Neonic, Social_Cue) %>%
+  group_by(Neonic, Social_Cue, Switch) %>%
+  arrange(Neonic, Social_Cue, Switch) %>%
+  count(Neonic, Social_Cue, Switch) 
 
 Spread.SwitchDay1=spread(data=SMeltable.Day1order, key=Switch, value=n)
+Spread.SwitchDay1=filter(Spread.SwitchDay1, !is.na(Neonic))
 Spread.SwitchDay1=Spread.SwitchDay1 %>%
   mutate(SwitchPercent=Switch/(Switch+Same+Start)) %>%
   mutate(SamePercent=Same/(Switch+Same+Start)) %>%
   mutate(Total=Switch+Same+Start)
 
-SwitchDay1Plot=ggplot(data=Spread.SwitchDay1, aes(x=Neonic, group= Treatment_Type, color=Treatment_Type, fill=Treatment_Type, y=SwitchPercent)) + geom_col(position = position_dodge()) + theme_classic() 
-#SwitchDay1Plot
+
+
+SwitchDay1Plot=ggplot(data=Spread.SwitchDay1, aes(x=Neonic, group= Social_Cue, color=Social_Cue, fill=Social_Cue, y=SwitchPercent)) + geom_col(position = position_dodge()) + theme_classic() 
+SwitchDay1Plot
 #has no confidence intervals, hold on.
 
 #calculating confidence intervals
-Day1SwitchConfInt=binom.confint(x=Spread.SwitchDay1$Switch, n=Spread.SwitchDay1$Total, conf.level=.95, methods="agresti-coull")
+#Day1SwitchConfInt=binom.confint(x=Spread.SwitchDay1$Switch, n=Spread.SwitchDay1$Total, conf.level=.95, methods="agresti-coull")
 Day1SwitchConfIntSelect=select(Day1SwitchConfInt, lower, upper)
 Spread.SwitchDay1=bind_cols(Spread.SwitchDay1, Day1SwitchConfIntSelect)
 
 #Plotting again, but better this time
-plot3 <- ggplot(RewardsPerTreatment2, aes(group=Combo, color = Combo, y = AvgBluePreference, x = pre.post)) + geom_point( position=pd,size=1) + geom_line(aes(group = Combo), position=pd) + labs(x="Pre v Post", y="Proportion of Visits to Blue Flowers") + theme_minimal()  + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.1,1.0))+ scale_color_hue(labels=c("NN honest", "NN misleading", "NN control", "naive honest", "naive misleading", "naive control"))
+#plot3 <- ggplot(RewardsPerTreatment2, aes(group=Combo, color = Combo, y = AvgBluePreference, x = pre.post)) + geom_point( position=pd,size=1) + geom_line(aes(group = Combo), position=pd) + labs(x="Pre v Post", y="Proportion of Visits to Blue Flowers") + theme_minimal()  + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.1,1.0))+ scale_color_hue(labels=c("NN honest", "NN misleading", "NN control", "naive honest", "naive misleading", "naive control"))
 
-Day1SwitchPlot=ggplot(data=Spread.SwitchDay1, aes(x=Neonic, group= Treatment_Type, color=Treatment_Type, fill=Treatment_Type, y=Switch/Total)) + geom_point(position=pd, size=1) + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + labs(title="Proportion of visits where bee switched to the other flower")
+Day1SwitchPlot=ggplot(data=Spread.SwitchDay1, aes(x=Neonic, group= Social_Cue, color=Social_Cue, fill=Social_Cue, y=Switch/Total)) + geom_point(position=pd, size=1) + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + labs(title="Proportion of visits where bee switched to the other flower")
 
 Day1SwitchPlot
 
 #How about the proportion of visits where bees sample the green flower, even after they know that blue is better?
     #I would need the number of visits to green after a bee has been to both blue and green.
 ```
+
+
 
 
 
