@@ -5,26 +5,1695 @@ date: "4/6/2020"
 output: html_document
 ---
 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+#knitr::opts_chunk$set(root.dir='/tmp')
+setwd("/Users/drmcder/Documents/GitHub/BumbleSIxNN")
+require(ggplot2)
+require(dplyr)
+require(readr)
+require(tidyr)
+require(reshape2)
+require(lme4)
+require(wesanderson)
+require(car)
+require(binom)
+require(boot)
+getwd()
+```
+This data was collected in April of 2019 as a follow up on last summer's social information experiment. In this experiment as in the last one, bees were tasked with foraging on two flowers over two days. On day one, their flower choices were blue (rewarding) or green (water). On day two, the same bees were placed in the same enclosures to forage on either blue (still the samelevel of reward) or purple (equally rewarding) flowers. Again, bees were assigned to different treatments with different social information cues on day one: honest (model bee on blue flower), misleading (model bee on green flower), or control (no model bee.) However, the change from my last experiments is that, this time, bees were in one of two treatments for 3 days preceding the trial: neonic-exposed and not neonic exposed. Neonic exposure (10 ppb) was through their ad. lib. supply of 1 M nectar.
+Bees were taken from one of two different colonies. Both day 1 and day 2 foraging bouts lasted for 30 minutes, bees were tested independently, and 7 or 8 trials ran simulateously in the chamber at one time. 
+In the colony (before testing) all bees were fed ad lib Koppert nectar solution and commercial pollen. Bees were starved for a minimim of two hours before entering foraging chamber.
+
+Data from the 2 colonies we recieved on 2/5/19 (which were tested in the foraging chamber in March) are not included in this analysis. This is because those colonies died ~3 weeks into the experiment, with considerable decline beforehand. In early/mid march, the queens in both colonies stopped laying eggs. Soon afterwards, most bees stopped foraging when in the foraging chamber. Laura Avila and I have talked a lot about what might have happened to these colonies. I think it's most likely that the bees came in with some sort of pathogen, which spread to the other colony. We cleaned every surface we could think of with bleach before setting up the colonies we received on 3/26/19. So far, these 3/26 colonies don't exhibit the same failure to thrive.
+
+
+I have also added in Data from summer 2018 (summer) and fall 2019 (October)
+
+#Summer Data
+```{r knitting data}
+#importing and naming each data set
+Te.1559=read.csv("foragingdata_2018.7.12.1559.csv")
+colnames(Te.1559) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+sTe.1440=read.csv("foragingdata_2018.7.12.1440.csv")
+colnames(sTe.1440) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1500=read.csv("foragingdata_2018.7.11.1500.csv")
+colnames(Tr.1500) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+sTr.1416=read.csv("foragingdata_2018.7.11.1416.csv")
+colnames(sTr.1416) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1330=read.csv("foragingdata_2018.7.11.1330.csv")
+colnames(Tr.1330) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1705=read.csv("foragingdata_2018.7.5.1705.csv")
+colnames(Te.1705) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1625=read.csv("foragingdata_2018.7.5.1625.csv")
+colnames(Te.1625) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1507=read.csv("foragingdata_2018.7.5.1507.csv")
+colnames(Te.1507) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1438=read.csv("foragingdata_2018.7.4.1438.csv")
+colnames(Tr.1438) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1337=read.csv("foragingdata_2018.7.4.1337.csv")
+colnames(Tr.1337) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+sTe.1702=read.csv("foragingdata_2018.6.27.1702.csv")
+colnames(sTe.1702) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1607=read.csv("foragingdata_2018.6.27.1607.csv")
+colnames(Te.1607) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+sTe.1518=read.csv("foragingdata_2018.6.27.1518.csv")
+colnames(sTe.1518) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1635=read.csv("foragingdata_2018.6.26.1635.csv")
+colnames(Tr.1635) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1518=read.csv("foragingdata_2018.6.26.1518.csv")
+colnames(Tr.1518) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1434=read.csv("foragingdata_2018.6.26.1434.csv")
+colnames(Tr.1434) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+#importing the data set that describes the shapes of flowers, treatment types, etc.
+    #this file has a formula for changing space-separated bee id's into dash-separated bee id names
+bee.info=read.csv("Donna Bombus ID Data w dashes.csv")
+
+#knitting together data sets into "treatment" files 
+sFull.Treatment1=rbind(Tr.1500,sTr.1416,Tr.1330,Tr.1438,Tr.1337,Tr.1434,Tr.1518,Tr.1635)
+
+#knitting together data sets into "test" files
+sFull.Test1=rbind(Te.1559,sTe.1440,Te.1705,Te.1625,Te.1507,sTe.1702,Te.1607,sTe.1518)
+
+
+#removing tester flower from both data sets
+sFull.Treatment1 =filter(sFull.Treatment1, bee !="CE-28-66-01-0B-00-12-E0")
+sFull.Treatment1 =filter(sFull.Treatment1, bee !="D9-28-66-01-0B-00-12-E0")
+sFull.Test1 =filter(sFull.Test1, bee !="CE-28-66-01-0B-00-12-E0")
+sFull.Test1 =filter(sFull.Test1, bee !="D9-28-66-01-0B-00-12-E0")
+
+
+#counting visits and rewards during Treatment runs
+#tbl_df(Full.Treatment1)
+sTotal.visits=count(sFull.Treatment1, bee)
+#Total.visits
+sTotal_Rewards=sFull.Treatment1%>%
+  group_by(bee) %>%
+  summarise(Rewards=sum(reward))
+#Total_Rewards  
+
+#Total_Rewards
+sTotal_RV=left_join(sTotal.visits, sTotal_Rewards, by="bee")
+index = which(is.na(sTotal_RV$Rewards))
+sTotal_RV = sTotal_RV[-index,]
+colnames(sTotal_RV)=c("bee", "Treatment.Visits", "Treatment.Rewards")
+#Total_RV
+sAvg.Visits=summarise(sTotal_RV, Treatment.visits=mean(Treatment.Visits), Treatment.reward=mean(Treatment.Rewards))
+#Avg.Visits
+
+
+#Counting visits and rewards during test runs
+#tbl_df(Full.Test1)
+sTotal.visitsT=count(sFull.Test1, bee)
+#Total.visitsT
+sTotal_RewardsT=sFull.Test1%>%
+  group_by(bee) %>%
+  summarise(Rewards=sum(reward))
+#Total_RewardsT  
+
+#Total_RewardsT
+sTotal_RV_T=left_join(sTotal.visitsT, sTotal_RewardsT, by="bee")
+index = which(is.na(sTotal_RV_T$Rewards))
+sTotal_RV_T = sTotal_RV_T[-index,]
+colnames(sTotal_RV_T)=c("bee", "Test.Visits", "Test.Rewards")
+#Total_RV_T
+sAvg.VisitsT=summarise(sTotal_RV_T, Test.visits=mean(Test.Visits), Test.reward=mean(Test.Rewards))
+#Avg.VisitsT
+
+sAllVisits=left_join(sTotal_RV,sTotal_RV_T, by="bee") %>%
+  filter(Test.Visits>0)
+#AllVisits
+sAvg.AllVisits=cbind(sAvg.Visits, sAvg.VisitsT)
+sAvg.AllVisits
+
+sBeeData=read.csv("Donna Bombus ID Data w dashes.csv")
+sBeeDataOrig=read.csv("Donna Bombus ID Data w dashes.csv")
+#BeeDataOrig
+#tbl_df(BeeData)
+#Simple_BeeData=
+ # slice(BeeData,41:109) %>%
+#  group_by(bee)
+
+sBeeData=full_join(sAllVisits, sBeeData, by="bee")
+#BeeData
+select(sBeeData, bee:Treatment_Type) %>%
+  slice(1:50) %>%
+  group_by(Treatment_Type) %>%
+  summarise(AvgTreatVisits=mean(Treatment.Visits), AvgTreatRewards=mean(Treatment.Rewards),AvgTestVisits=mean(Test.Visits), AvgTestRewards=mean(Test.Rewards))
+
+sFull.Data=rbind(sFull.Treatment1, sFull.Test1)
+sdayDate= select(sFull.Data,date) %>%
+  distinct(date) %>%
+  slice(c(1,5,6,8,9,10))
+#Full.Data
+
+sDay=c("treatment","treatment","treatment","test","test","test")
+sdayDate=cbind(sdayDate,sDay)
+colnames(sdayDate)[colnames(sdayDate)=="sDay"] <- "Day"
+#dayDate
+
+colors=read.csv("Flower color data Summer SI learning envt trials.csv")
+names(colors) <- c("flower", "reader", "Day", "color", "reward")
+#colors
+
+#need to join dayDate to full trial, then join treatment types and colors to all of that
+
+sFull.Data=left_join(sFull.Data,sdayDate,by="date") 
+#%>% select(-Days)
+colnames(sFull.Data)[colnames(sFull.Data)=="Day.x"] <- "Day"
+#Full.Data
+
+#adding in treatment types
+sFull.Data.Treatments=full_join(sFull.Data, sBeeDataOrig, by="bee")
+sFull.Data.Treatments=sFull.Data.Treatments[1:40300,]
+#Full.Data.Treatments
+#above line is cutting out the bees from "BeeDataOrig" that we tagged (and so put on google sheet) but never tested
+
+#adding in colors
+sFull.Data.Colors=merge(sFull.Data.Treatments, colors, by=c("flower", "Day"), all=TRUE)
+sFull.Data.Colors= sFull.Data.Colors[1:39600,]
+
+#adding in a column for Colony that describes this summer data as "Colony 3", so that it can be compared in other analysis
+sFull.Data.Colors=mutate(sFull.Data.Colors, Colony=3)
 ```
 
-## R Markdown
+#April Data
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r knitting data}
+#importing and naming each data set
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+#Treatments
+Tr.1416=read.csv("foragingdata_2019.4.1.1416.csv")
+colnames(Tr.1416) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
 
-```{r cars}
-summary(cars)
+Tr.1506=read.csv("foragingdata_2019.4.1.1506.csv")
+colnames(Tr.1506) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1557=read.csv("foragingdata_2019.4.1.1557.csv")
+colnames(Tr.1557) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1636=read.csv("foragingdata_2019.4.1.1636.csv")
+colnames(Tr.1636) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1141=read.csv("foragingdata_2019.4.11.1141.csv")
+colnames(Tr.1141) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1240=read.csv("foragingdata_2019.4.11.1240.csv")
+colnames(Tr.1240) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1340=read.csv("foragingdata_2019.4.11.1340.csv")
+colnames(Tr.1340) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1327=read.csv("foragingdata_2019.4.15.1327.csv")
+colnames(Tr.1327) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1408=read.csv("foragingdata_2019.4.15.1408.csv")
+colnames(Tr.1408) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1447=read.csv("foragingdata_2019.4.15.1447.csv")
+colnames(Tr.1447) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1538=read.csv("foragingdata_2019.4.15.1538.csv")
+colnames(Tr.1538) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1623=read.csv("foragingdata_2019.4.15.1623.csv")
+colnames(Tr.1623) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1324=read.csv("foragingdata_2019.4.18.1324.csv")
+colnames(Tr.1324) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1404=read.csv("foragingdata_2019.4.18.1404.csv")
+colnames(Tr.1404) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1450=read.csv("foragingdata_2019.4.18.1450.csv")
+colnames(Tr.1450) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1538=read.csv("foragingdata_2019.4.18.1538.csv")
+colnames(Tr.1538) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tr.1402=read.csv("foragingdata_2019.4.23.1402.csv")
+colnames(Tr.1402) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+Tr.1453=read.csv("foragingdata_2019.4.23.1453.csv")
+colnames(Tr.1453) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+Tr.1535=read.csv("foragingdata_2019.4.23.1535.csv")
+colnames(Tr.1535) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+Tr.1622=read.csv("foragingdata_2019.4.23.1622.csv")
+colnames(Tr.1622) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+Tr.1708=read.csv("foragingdata_2019.4.23.1708.csv")
+colnames(Tr.1708) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+#Tests
+Te.1404=read.csv("foragingdata_2019.4.2.1404.csv")
+colnames(Te.1404) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1455=read.csv("foragingdata_2019.4.2.1455.csv")
+colnames(Te.1455) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1544=read.csv("foragingdata_2019.4.2.1544.csv")
+colnames(Te.1544) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1644=read.csv("foragingdata_2019.4.2.1644.csv")
+colnames(Te.1644) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1247=read.csv("foragingdata_2019.4.12.1247.csv")
+colnames(Te.1247) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1350=read.csv("foragingdata_2019.4.12.1350.csv")
+colnames(Te.1350) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1432=read.csv("foragingdata_2019.4.12.1432.csv")
+colnames(Te.1432) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1430=read.csv("foragingdata_2019.4.16.1430.csv")
+colnames(Te.1430) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1509=read.csv("foragingdata_2019.4.16.1509.csv")
+colnames(Te.1509) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1550=read.csv("foragingdata_2019.4.16.1550.csv")
+colnames(Te.1550) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1629=read.csv("foragingdata_2019.4.16.1629.csv")
+colnames(Te.1629) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1710=read.csv("foragingdata_2019.4.16.1710.csv")
+colnames(Te.1710) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1440=read.csv("foragingdata_2019.4.19.1440.csv")
+colnames(Te.1440) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1518=read.csv("foragingdata_2019.4.19.1518.csv")
+colnames(Te.1518) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1604=read.csv("foragingdata_2019.4.19.1604.csv")
+colnames(Te.1604) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1702=read.csv("foragingdata_2019.4.19.1702.csv")
+colnames(Te.1702) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Te.1326=read.csv("foragingdata_2019.4.24.1326.csv")
+colnames(Te.1326) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+Te.1408=read.csv("foragingdata_2019.4.24.1408.csv")
+colnames(Te.1408) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+Te.1448=read.csv("foragingdata_2019.4.24.1448.csv")
+colnames(Te.1448) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+Te.1526=read.csv("foragingdata_2019.4.24.1526.csv")
+colnames(Te.1526) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+Te.1602=read.csv("foragingdata_2019.4.24.1602.csv")
+colnames(Te.1602) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+#knitting together data sets into "treatment" files 
+Full.Treatment1=rbind(Tr.1416,Tr.1506,Tr.1557,Tr.1636,Tr.1141,Tr.1240,Tr.1340,Tr.1327,Tr.1408,Tr.1447,Tr.1538,Tr.1623,Tr.1324,Tr.1404,Tr.1450,Tr.1538,Tr.1402,Tr.1453,Tr.1535,Tr.1622,Tr.1708)
+
+#knitting together data sets into "test" files
+Full.Test1=rbind(Te.1404,Te.1455,Te.1544,Te.1644,Te.1247,Te.1350,Te.1432,Te.1430,Te.1509,Te.1550,Te.1629,Te.1710,Te.1440,Te.1518,Te.1604,Te.1702,Te.1326,Te.1408,Te.1448,Te.1526,Te.1602)
+
+#removing tester flower from both data sets
+Full.Treatment1 =filter(Full.Treatment1, bee !="8E-29-66-01-0B-00-12-E0")
+Full.Test1 =filter(Full.Test1, bee !="8E-29-66-01-0B-00-12-E0")
+Full.Treatment1 =filter(Full.Treatment1, bee !="A2-25-66-01-0B-00-12-E0")
+Full.Test1 =filter(Full.Test1, bee !="A2-25-66-01-0B-00-12-E0")
+
 ```
 
-## Including Plots
+Adding in Bee ID data csv
+This spreadsheet has info on the home colonies and treatments (both neonic and social cue) used for each bee.
 
-You can also embed plots, for example:
+  Note that this data has been transformed in Excel. First, i removed bees that dies between day 1 and day 2 trials (there were 2-3 of these, they are struck through in the original spreadsheet "Bee ID Data" on Brosi Lab Google Drive.) The RFID tag reader in the flowers and the RFID tag reader in the pen (which we use for manual input before trials) records the flower ID somewhat differently. The flower tag has dashes within the tag ID number e.g. "CE-28-66-01-0B-00-12-E0" but the pen would record the same tag as "CE 28 66 01 0B 00 00 00." I've used an excel formula in the column "bee" so that my pen readings in this spreadsheet are compatible with the foraging chamber data. Excel formula is:
+  =LEFT(B2,2)&"-"&MID(B2,4,2)&"-"&MID(B2,7,2)&"-"&MID(B2,10,2)&"-"&MID(B2,13,2)&"-"&MID(B2,16,2)&"-"&"12"&"-"&"E0"
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r BEE ID info}
+
+BeeData=read.csv("AllApril_dashes_Bombus ID Data.csv")
+#tbl_df(BeeData)
+Simp_BeeData=select(BeeData, Enclosure, bee, Colony, Neonic, Treatment_Type) %>%
+  slice(1:127)
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+#October Data
+```{r}
+#Week 1
+Tre.1407=read.csv("foragingdata_2019.9.24.1407.csv")
+colnames(Tre.1407) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tre.1446=read.csv("foragingdata_2019.9.24.1446.csv")
+colnames(Tre.1446) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tes.1355=read.csv("foragingdata_2019.9.25.1355.csv")
+colnames(Tes.1355) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tes.1438=read.csv("foragingdata_2019.9.25.1438.csv")
+colnames(Tes.1438) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+#Week 2
+Tre.1240=read.csv("foragingdata_2019.10.1.1240.csv")
+colnames(Tre.1240) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tre.1321=read.csv("foragingdata_2019.10.1.1321.csv")
+colnames(Tre.1321) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tre.1402=read.csv("foragingdata_2019.10.1.1402.csv")
+colnames(Tre.1402) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tre.1439=read.csv("foragingdata_2019.10.1.1439.csv")
+colnames(Tre.1439) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tre.1523=read.csv("foragingdata_2019.10.1.1523.csv")
+colnames(Tre.1523) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tre.1609=read.csv("foragingdata_2019.10.1.1609.csv")
+colnames(Tre.1609) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tes.1357=read.csv("foragingdata_2019.10.2.1357.csv")
+colnames(Tes.1357) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tes.1437=read.csv("foragingdata_2019.10.2.1437.csv")
+colnames(Tes.1437) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tes.1514=read.csv("foragingdata_2019.10.2.1514.csv")
+colnames(Tes.1514) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tes.1556=read.csv("foragingdata_2019.10.2.1556.csv")
+colnames(Tes.1556) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+Tes.1641=read.csv("foragingdata_2019.10.2.1641.csv")
+colnames(Tes.1641) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tes.1723=read.csv("foragingdata_2019.10.2.1723.csv")
+colnames(Tes.1723) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+#Week 3
+Tre.1312=read.csv("foragingdata_2019.10.8.1312.csv")
+colnames(Tre.1312) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+Tre.1352=read.csv("foragingdata_2019.10.8.1352.csv")
+colnames(Tre.1352) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+Tre.1433=read.csv("foragingdata_2019.10.8.1433.csv")
+colnames(Tre.1433) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+Tes.1444=read.csv("foragingdata_2019.10.9.1444.csv")
+colnames(Tes.1444) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+Tes.1528=read.csv("foragingdata_2019.10.9.1528.csv")
+colnames(Tes.1528) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+Tes.1613=read.csv("foragingdata_2019.10.9.1613.csv")
+colnames(Tes.1613) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+
+#knitting together data sets into "treatment" files 
+Full.TreatmentOct=rbind(Tre.1407, Tre.1446, Tre.1240, Tre.1321, Tre.1402, Tre.1439, Tre.1523, Tre.1609, Tre.1312, Tre.1352, Tre.1433)
+
+#knitting together data sets into "test" files
+Full.TestOct=rbind(Tes.1355, Tes.1438, Tes.1357, Tes.1437, Tes.1514, Tes.1556, Tes.1641, Tes.1723, Tes.1444, Tes.1528, Tes.1613)
+
+#removing tester flower from both data sets
+Full.TreatmentOct =filter(Full.TreatmentOct, bee !="A2-25-66-01-0B-00-12-E0")
+Full.TestOct =filter(Full.TestOct, bee !="A2-25-66-01-0B-00-12-E0")
+
+
+#counting visits and rewards during Treatment runs
+#tbl_df(Full.Treatment1)
+OctTotal.visits=count(Full.TreatmentOct, bee)
+#Total.visits
+OctTotal_Rewards=Full.TreatmentOct%>%
+  group_by(bee) %>%
+  summarise(Rewards=sum(reward))
+#OctTotal_Rewards  
+
+#Total_Rewards
+OctTotal_RV=left_join(OctTotal.visits, OctTotal_Rewards, by="bee")
+index = which(is.na(OctTotal_RV$Rewards))
+OctTotal_RV = OctTotal_RV[-index,]
+colnames(OctTotal_RV)=c("bee", "Treatment.Visits", "Treatment.Rewards")
+#OctTotal_RV
+OctAvg.Visits=summarise(OctTotal_RV, Treatment.visits=mean(Treatment.Visits), Treatment.reward=mean(Treatment.Rewards))
+#OctAvg.Visits
+
+
+#Counting visits and rewards during test runs
+#tbl_df(Full.Test1)
+OctTotal.visitsT=count(Full.TestOct, bee)
+#Total.visitsT
+OctTotal_RewardsT=Full.TestOct%>%
+  group_by(bee) %>%
+  summarise(Rewards=sum(reward))
+#OctTotal_RewardsT  
+
+#Total_RewardsT
+OctTotal_RV_T=left_join(OctTotal.visitsT, OctTotal_RewardsT, by="bee")
+index = which(is.na(OctTotal_RV_T$Rewards))
+OctTotal_RV_T = OctTotal_RV_T[-index,]
+colnames(OctTotal_RV_T)=c("bee", "Test.Visits", "Test.Rewards")
+#Total_RV_T
+OctAvg.VisitsT=summarise(OctTotal_RV_T, Test.visits=mean(Test.Visits), Test.reward=mean(Test.Rewards))
+#OctAvg.VisitsT
+
+OctAllVisits=left_join(OctTotal_RV,OctTotal_RV_T, by="bee") %>%
+  filter(Test.Visits>0)
+#AllVisits
+OctAvg.AllVisits=cbind(OctAvg.Visits, OctAvg.VisitsT)
+#OctAvg.AllVisits
+
+#################Adding in data from google sheet
+
+
+OctBeeData=read.csv("Bombus ID Data Oct.csv")
+#OctBeeDataOrig=read.csv("Donna Bombus ID Data w dashes.csv")
+#BeeDataOrig
+#tbl_df(BeeData)
+#Simple_BeeData=
+ # slice(BeeData,41:109) %>%
+#  group_by(bee)
+
+OctBeeData=full_join(OctAllVisits, OctBeeData, by="bee")
+#OctBeeData
+select(OctBeeData, bee:Treatment_Type) %>%
+  slice(1:66) %>%
+  group_by(Treatment_Type) %>%
+  summarise(AvgTreatVisits=mean(Treatment.Visits), AvgTreatRewards=mean(Treatment.Rewards),AvgTestVisits=mean(Test.Visits), AvgTestRewards=mean(Test.Rewards))
+
+OctFull.Data=rbind(Full.TreatmentOct, Full.TestOct)
+
+################Need to make a new DayDate
+OctdayDate=read.csv("OctDayDate.csv")
+
+#OctdayDate= select(sFull.Data,date) %>%
+#  distinct(date) %>%
+#  slice(c(1,5,6,8,9,10))
+#Full.Data
+
+#sDay=c("treatment","treatment","treatment","test","test","test")
+#sdayDate=cbind(sdayDate,sDay)
+#colnames(sdayDate)[colnames(sdayDate)=="sDay"] <- "Day"
+#dayDate
+
+colors=read.csv("Flower color data Summer SI learning envt trials.csv")
+names(colors) <- c("flower", "reader", "Day", "color", "reward")
+#colors
+
+#need to join dayDate to full trial, then join treatment types and colors to all of that
+
+OctFull.Data=left_join(OctFull.Data,OctdayDate,by="date") 
+#%>% select(-Days)
+colnames(OctFull.Data)[colnames(OctFull.Data)=="Day.x"] <- "Day"
+#Full.Data
+
+#adding in treatment types
+OctFull.Data.Treatments=full_join(OctFull.Data, OctBeeData, by="bee")
+#OctFull.Data.Treatments=sFull.Data.Treatments[1:40300,]
+#Full.Data.Treatments
+#above line is cutting out the bees from "BeeDataOrig" that we tagged (and so put on google sheet) but never tested
+
+#adding in colors
+OctFull.Data.Colors=merge(OctFull.Data.Treatments, colors, by=c("flower", "Day"), all=TRUE)
+OctFull.Data.Colors= OctFull.Data.Colors[1:103596,]
+
+#adding in a column for Colony that describes this fall 2019 data as "Colony 4", so that it can be compared in other analysis
+OctFull.Data.Colors=mutate(OctFull.Data.Colors, Colony=4)
+```
+
+
+#How many visits did each bee make in its half hour treatment or test?
+
+```{r}
+
+#counting visits and rewards during Treatment runs
+#tbl_df(Full.Treatment1)
+Total.visits=count(Full.Treatment1, bee)
+#Total.visits
+Total_Rewards=Full.Treatment1%>%
+  group_by(bee) %>%
+  summarise(Rewards=sum(reward))
+#Total_Rewards  
+
+#Total_Rewards
+Total_RV=left_join(Total.visits, Total_Rewards, by="bee")
+index = which(is.na(Total_RV$Rewards))
+Total_RV = Total_RV[-index,]
+colnames(Total_RV)=c("bee", "Treatment.Visits", "Treatment.Rewards")
+#Total_RV
+
+#Counting visits and rewards during test runs
+#tbl_df(Full.Test1)
+Total.visitsT=count(Full.Test1, bee)
+#Total.visitsT
+Total_RewardsT=Full.Test1%>%
+  group_by(bee) %>%
+  summarise(Rewards=sum(reward))
+#Total_RewardsT  
+
+#Total_RewardsT
+Total_RV_T=left_join(Total.visitsT, Total_RewardsT, by="bee")
+index = which(is.na(Total_RV_T$Rewards))
+Total_RV_T = Total_RV_T[-index,]
+colnames(Total_RV_T)=c("bee", "Test.Visits", "Test.Rewards")
+#Total_RV_T
+
+
+AllVisits=full_join(Total_RV,Total_RV_T, by="bee") %>% filter(Treatment.Visits>0, Test.Visits>0)              # <--------------this makes it so you only test bees which forage on both days. to test all bees, delete this.
+#AllVisits
+
+
+AllBeeData=full_join(AllVisits, Simp_BeeData, by="bee") %>% filter(Treatment.Visits>0, Test.Visits>0)     
+
+AllBeeData=group_by(AllBeeData,bee)
+#BeeData
+select(AllBeeData, bee:Treatment_Type) %>%
+  group_by(Neonic,Treatment_Type) %>%
+  summarise(AvgTreatVisits=mean(Treatment.Visits), AvgTreatRewards=mean(Treatment.Rewards),AvgTestVisits=mean(Test.Visits), AvgTestRewards=mean(Test.Rewards))
+```
+
+Thoughts: there are a lot of bees that are in BeeData with an enclosure number, etc. (127 of them) but far fewer bees (53) that show up in All Visits. I think that's because bees which never forage don't appear on the computer's data files (the ones automatically generated by the RFID tag readers.) Which means that every NA in AllBeeData (all the bees between 53 and 127) should be 0s. I've double checked, and I'm not missing any data files. A few bees were treated but not tested (like 5 or so) but that doens't explain the discrepancy, either. Also, there are no 0s in All Visits.
+
+Ugh but actually that doesn't make a ton of sense either, becuase it means that bees either foraged during both test and treatment OR they never foraged on either day. There are no bees that foraged one day and not another. So i'm going to try removing the NA bees and see if that makes more sense.
+GOing back to the AllVisits data just before doing #%>% filter(Test.Visits>0), there are ~19 bees that are treated but not tested. Which is weird becuase Total_RV_T (which groups by bee for all test day files) has 69 bees, not 72-19=53 bees.
+
+I re-made AllVisits with a full_join instead of a left_join. This means that there are ~19 bees that have data for treatment but not test, and ~16 that have data for test but not treatment. Presumably, these NAs are 0s becuase those bees didn't forage on one day or another. I can check this in the R metadata. 
+
+So, my options are to only evaluate bees which foraged on both days (53 bees total) or evaluate all bees, regardless of whether or not they foraged on 0,1, or 2 days (127 bees). My summer analysis used option 1. I'll try both, here, starting with bees that def foraged on both days (so, same as last time)
+
+#Organizing total visits by flower type
+
+Note again: The flower set up this time is exactly the same as the flower set up over the summer 2018.
+
+```{r Flower color to GLM}
+#Adding in table of types of day (test v treatment) to data
+
+Full.Data=rbind(Full.Treatment1, Full.Test1)
+dayDate= select(Full.Data,date) %>%
+  distinct(date) %>% 
+  slice(c(1,3,4,6,7,8,9,10,11,14))
+#Full.Data
+
+Day=c("treatment","treatment","treatment","treatment","treatment", "test","test","test","test","test")
+dayDate=cbind(dayDate,Day)
+#dayDate
+
+colors=read.csv("Flower color data Summer SI learning envt trials.csv")
+names(colors) <- c("flower", "reader", "Day", "color", "reward")
+#colors
+
+#need to join dayDate to full trial, then join treatment types and colors to all of that
+
+Full.Data=left_join(Full.Data,dayDate,by="date") 
+#%>% select(-Days)
+colnames(Full.Data)[colnames(Full.Data)=="Day.x"] <- "Day"
+#Full.Data
+
+#adding in treatment types
+Full.Data.Treatments=full_join(Full.Data, Simp_BeeData, by="bee") 
+index = which(is.na(Full.Data.Treatments$t.forage))
+Full.Data.Treatments = Full.Data.Treatments[-index,]
+#this indexing and removal is to remove bees which did not forage on both days.
+
+#adding in colors
+Full.Data.Colors=merge(Full.Data.Treatments, colors, by=c("flower", "Day"), all=TRUE)
+
+
+#make sure summer and october are inthere!
+OctSlimFull.Data.Colors=OctFull.Data.Colors %>%
+  select(flower, Day, date, t.day, bee, t.forage, reward.x,Enclosure,Colony,Neonic,Treatment_Type, reader, color, reward.y)
+
+s2Full.Data.Colors=mutate(sFull.Data.Colors, Neonic="n") %>%
+  select(flower, Day, date, t.day, bee, t.forage, reward.x,Enclosure,Colony,Neonic,Treatment_Type, reader, color, reward.y)
+
+AllFull.Data.Colors=rbind(Full.Data.Colors,OctSlimFull.Data.Colors, s2Full.Data.Colors)
+Trtmnt=read.csv("Trtmnt.csv")
+AllFull.Data.Colors=full_join(AllFull.Data.Colors,Trtmnt, by="Treatment_Type")
+#Full.Data.Colors= Full.Data.Colors[1:39600,]
+#the arranging that happens here puts all the "WARNING" rows at the end of the spreadsheet. it also adds two rows, for reasons unknown. I sliced off the end of the data set to remove the WARNING rows
+#Full.Data.Colors is the MOST comprehensive data set (includes more columns and a few NA values)
+
+Full.Data.All= select(AllFull.Data.Colors, bee, Neonic, Social_Cue, reward.x, color, Day, Colony)
+index = which(is.na(Full.Data.All))
+Full.Data.All = Full.Data.All[-index,]
+head(Full.Data.All)
+
+#Full.Data.All removes NA's and focuses in on columns of interest.
+
+#sum of rewards bees got from each color
+color.visits=group_by(Full.Data.All, color) %>%
+  summarise(Rewards=sum(reward.x))
+#head(color.visits)
+
+##making a table of colors and treatments to make analysis easier later
+color.treatments=read.csv("color.treatments.csv")
+color.treatments=tbl_df(color.treatments)
+#color.treatments
+#merging that table onto the full data
+colordata=full_join(Full.Data.All, color.treatments, by="color")
+#colordata
+#summarizing that full data by summing up the rewards for each treatment type
+sum.colordata=colordata  %>% 
+  group_by(Neonic,Social_Cue, color, Colony) %>% 
+  summarise(sums=sum(reward.x))
+#sum.colordata
+#There's some issue with sum.colordata, here, where it doesn't include the violet and green visits in the "hard" treatment. It does if you only group by treatment type and color, but then it loses them when you sum up the rewards.
+
+treatment.summaries=spread(sum.colordata, color, sums)
+#treatment.summaries
+#index = which(is.na(treatment.summaries))
+#treatment.summaries = treatment.summaries[-index,]
+#treatment.summaries=select(treatment.summaries, blue.test, blue.treatment,green.treatment,violet.test)
+#treatment.summaries
+
+
+#trying to melt data using reshape2
+sum.colordata=select(colordata, bee, Neonic, Social_Cue, reward.x, pre.post, new.color)
+#sum.colordata
+#sum.colordata is the rawest data that shows all of and each bee-flower visit.
+#colorcast=dcast(sum.colordata, bee + Treatment_Type+pre.post~reward.x+new.color, fun.aggregate = sum)
+#trying to just cast without melting did not work, even when I removes "reward.x"
+
+sum.colormelt=melt(sum.colordata)
+#sum.colormelt
+
+
+#casting data
+sum.colorcast=dcast(sum.colormelt, bee +  Neonic+ Social_Cue+pre.post~new.color, fun.aggregate = sum)
+#sum.colorcast
+head(sum.colorcast)
+summary(sum.colorcast)
+#there are some bees in here that only have one row. That's okay. I mean, it's annoying, but it's to be expected. The missing rows are due to 2 missing data files caused either by a computer glitch or a me glitch
+
+
+#GLMing data
+NNapplicationGLM2=glmer(cbind(blue, not.blue)~pre.post*Neonic+(1|bee), family=binomial, data=sum.colorcast)
+summary(NNapplicationGLM2)
+
+a=filter(sum.colorcast, pre.post == "pre")
+SIapplicationGLM3=glmer(cbind(blue, not.blue)~Social_Cue+(1|bee), family=binomial, data=a)
+summary(SIapplicationGLM3)
+
+######
+NNxSIapplicationGLM2=glmer(cbind(blue, not.blue)~pre.post*Neonic*Social_Cue+(1|bee), family=binomial, data=sum.colorcast)
+summary(NNxSIapplicationGLM2)
+#Anova(NNxSIapplicationGLM2)
+
+```
+
+
+
+
+
+
+#Shit gets useful around here
+
+
+
+
+
+
+Adding April and Summer Data together
+And also adding in October (findme)
+
+```{r}
+
+#OctFull.Data.Colors
+
+#This first step gets rid of baggage from the Bombus ID spreadsheet
+#the Neonic=n in this first mutation is becuase that's summer dataa, which has no neonic data becuase that was before i started the neonic treatment
+
+OctSlimFull.Data.Colors=OctFull.Data.Colors %>%
+  select(flower, Day, date, t.day, bee, t.forage, reward.x,Enclosure,Colony,Neonic,Treatment_Type, reader, color, reward.y)
+
+Sum.Apr.Data=rbind(s2Full.Data.Colors,Full.Data.Colors)
+Sum.Apr.OctData=rbind(Sum.Apr.Data, OctSlimFull.Data.Colors)
+all.colordata=full_join(Sum.Apr.OctData, color.treatments, by="color")
+
+#checking that colony 4 is in the data
+Check3=filter(all.colordata, Colony=="4")
+#one of the above steps in this chunk doesnt actually have the october data. find it
+
+#Prepping to melt data
+
+
+
+all.sum.colordata=all.colordata %>%
+  group_by(Neonic, Treatment_Type, Colony, color)  %>%
+  summarise(sums=sum(reward.x))
+
+
+
+Trtmnt=read.csv("Trtmnt.csv")
+all.colordata=full_join(all.colordata,Trtmnt, by="Treatment_Type")
+
+
+
+meltable.colordata=all.colordata %>%
+  select(bee, Colony, Neonic, Social_Cue, reward.x, pre.post,new.color)
+
+
+meltable.colordata$Colony <-as.character(as.numeric(meltable.colordata$Colony))
+
+all.colormelt=melt(meltable.colordata)
+
+all.colorcast=dcast(all.colormelt, bee+Colony+Neonic+Social_Cue+pre.post~new.color, fun.aggregate=sum)
+
+summary(all.colorcast)
+
+#Running models!!!
+
+All.NNxSI.glmm=glmer(cbind(blue,not.blue)~pre.post*Neonic*Social_Cue+(1|bee), family=binomial, data=all.colorcast)
+summary(All.NNxSI.glmm)
+
+
+just.naive=all.colorcast %>%
+  filter(Neonic=="n")
+
+Check5=filter(just.naive, Colony=="4")
+
+Colony.glmm=glmer(cbind(blue,not.blue)~pre.post*Social_Cue*Colony+(1|bee), family=binomial, data=just.naive)
+summary(Colony.glmm)
+
+#Prepping data to graph
+
+all.RewardsPerTreatment=all.colorcast %>%
+  mutate(BluePreference=blue/(blue+not.blue)) %>%
+  group_by(pre.post,Neonic,Social_Cue) %>%
+  summarise(AvgBluePreference=mean(BluePreference), SdBluePreference=sd(BluePreference), SumBlueRewards=sum(blue), SumTotalRewards=sum(blue+not.blue)) %>%
+  filter (SumBlueRewards>0)
+
+Combo=read.csv("NN_SI_Combo.csv")
+
+all.RewardsPerTreatment1=left_join(all.colorcast,Combo,by=c("Neonic","Social_Cue")) %>%
+  mutate(BluePreference=blue/(blue+not.blue))  %>%
+  group_by(pre.post,Combo, Neonic, Social_Cue) %>% 
+  mutate(N=n()) %>%
+  group_by(pre.post,Combo,N, Neonic, Social_Cue) %>%      #i did this to keep N as a column
+  summarise(SumBlueRewards=sum(blue), SumTotalRewards=sum(blue+not.blue)) %>%
+  mutate(AvgBlueRewards=SumBlueRewards/SumTotalRewards) %>%
+  filter (SumBlueRewards>0)
+
+
+##Calculating Confidence Intervals
+
+
+all.RpTconfint=binom.confint(x=all.RewardsPerTreatment1$SumBlueRewards, n=all.RewardsPerTreatment1$SumTotalRewards, conf.level=.95, methods = "agresti-coull")
+#RpTconfint
+#selecting the upper and lower bounds from the conf int table to add to RewardsPerTreatment
+all.RpTUpLow=select(all.RpTconfint, lower, upper )
+all.RewardsPerTreatment1=bind_cols(all.RewardsPerTreatment1,all.RpTUpLow)
+
+class(all.RewardsPerTreatment1$pre.post)
+all.RewardsPerTreatment1$pre.post = factor(all.RewardsPerTreatment1$pre.post, levels(factor(all.RewardsPerTreatment1$pre.post))[c(2,1)])
+
+all.RewardsPerTreatment1$Social_Cue = factor(all.RewardsPerTreatment1$Social_Cue, levels(factor(all.RewardsPerTreatment1$Social_Cue))[c(1,3,2)])
+
+#Graphing
+
+#Check5=filter(all.RewardsPerTreatment1, Colony=="4")
+
+all.RewardsPerTreatment1$Combo <-as.character(as.numeric(all.RewardsPerTreatment1$Combo))
+
+pd <- position_dodge(width = 0.1)
+
+all.plot <- ggplot(all.RewardsPerTreatment1, aes(group=Combo, color = Combo, y = SumBlueRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=1) + geom_line(aes(group = Combo), position=pd) + labs(x="Pre v Post", y="Proportion of Visits to Blue Flowers") + theme_minimal() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue(labels=c("NN honest", "NN misleading", "NN control", "naive honest", "naive misleading", "naive control")) + geom_hline(yintercept=0.5, color = "black")
+  
+
+  
+#scale_color_brewer(palette ="Set1" ) + scale_fill_discrete(name="Treatment", labels=c("NN honest", "NN misleading", "NN control", "naive honest", "naive misleading", "naive control"))
+
+all.plot
+
+PestiFacetLabels <- c("Not Exposed", "Pesticide Exposed")
+names(PestiFacetLabels) <- c("n", "y")
+
+
+# Create the plot
+
+
+all.plot2 <- ggplot(all.RewardsPerTreatment1, aes(group=Social_Cue, color = Social_Cue, y = SumBlueRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Social_Cue),, size=3, position=pd) + labs(x="Day of Foraging", y="Proportion of Visits to Blue Flowers", title="Proportion of Visits to Blue Flowers by Day") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue() + facet_grid(.~Neonic, labeller = labeller(Neonic = PestiFacetLabels)) + geom_hline(yintercept=0.5,linetype="dashed", color = "black")
+
+
+
+
+#NoPestPlot <- ggplot(all.RewardsPerTreatmentNoPesticides, aes(group=Social_Cue, color = Social_Cue, y = SumBlueRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Social_Cue),size=3, position=pd) + labs(x="Day of Foraging", y="Proportion of Visits to Blue Flowers", title="Proportion of Visits to Blue Flowers for Bees Trained With Different Social Cues") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue() + geom_hline(yintercept=0.5,linetype="dashed", color = "black") + scale_fill_discrete(name = "Social Cue Treatment")
+
+all.RewardsPerTreatmentNoPesticides=filter(all.RewardsPerTreatment1, Neonic=="n")
+NoPestPlot <- ggplot(all.RewardsPerTreatmentNoPesticides, aes(group=Social_Cue, color = Social_Cue, y = SumBlueRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Social_Cue),size=3, position=pd) + labs(x="Day of Foraging", y="Proportion of Visits to Blue Flowers", title="Proportion of Visits to Blue Flowers for Bees Trained With Different Social Cues") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue() + geom_hline(yintercept=0.5,linetype="dashed", color = "black") + scale_color_hue(name="Social Cue Treatment")
+
+NoPestPlot
+#Repeating the above graphing + prep with the non-exposed bees
+naive.RewardsPerTreatment=just.naive %>%
+  mutate(BluePreference=blue/(blue+not.blue)) %>%
+  group_by(pre.post,Social_Cue, Colony) %>%
+  summarise( SumBlueRewards=sum(blue), SumTotalRewards=sum(blue+not.blue)) %>%
+  filter (SumBlueRewards>0)
+
+Check5=filter(naive.RewardsPerTreatment, Colony=="4")
+
+
+naive.RpTconfint=binom.confint(x=naive.RewardsPerTreatment$SumBlueRewards, n=naive.RewardsPerTreatment$SumTotalRewards, conf.level=.95, methods = "agresti-coull")
+
+naive.RpTUpLow=select(naive.RpTconfint, lower, upper )
+naive.RewardsPerTreatment=bind_cols(naive.RewardsPerTreatment,naive.RpTUpLow)
+
+naive.RewardsPerTreatment$pre.post = factor(naive.RewardsPerTreatment$pre.post, levels(factor(naive.RewardsPerTreatment$pre.post))[c(2,1)])
+
+naive.RewardsPerTreatment$Social_Cue = factor(naive.RewardsPerTreatment$Social_Cue, levels(factor(naive.RewardsPerTreatment$Social_Cue))[c(1,3,2)])
+
+Check5=filter(naive.RewardsPerTreatment, Colony=="4")
+
+naive.plot <- ggplot(naive.RewardsPerTreatment, aes(group=Social_Cue, color = Social_Cue, y = SumBlueRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Social_Cue), position=pd) + labs(x="Pre v Post", y="Proportion of Visits to Blue Flowers") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.2,0.9))+ scale_color_hue() + facet_grid(.~Colony)
+
+naive.plot
+
+NoPestPlot <- ggplot(all.RewardsPerTreatmentNoPesticides, aes(group=Social_Cue, color = Social_Cue, y = SumBlueRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Social_Cue),size=3, position=pd) + labs(x="Day of Foraging", y="Proportion of Visits to Blue Flowers", title="Proportion of Visits to Blue Flowers for Bees Trained With Different Social Cues") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue() + geom_hline(yintercept=0.5,linetype="dashed", color = "black") + scale_fill_discrete(name = "Social Cue Treatment")
+
+
+#all the same but just for pre
+pre.RewardsPerTreatment=filter(all.RewardsPerTreatment1, pre.post=="pre")
+pre.plot <-ggplot(pre.RewardsPerTreatment, aes(group=Neonic, color=Neonic, y=SumBlueRewards/SumTotalRewards, x=Social_Cue))+ geom_point( position=pd,size=3)  + labs(x="Social Cue", y="Proportion of Visits to Blue Flowers", title="Proportion of Visits to Blue Flowers on Day 1 by Neonicotinoid Exposure") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + scale_color_hue() + scale_color_hue(name="Pesticide Exposure", labels=c("Not Exposed", "Exposed")) + geom_hline(yintercept=0.5,linetype="dashed", color = "black")
+
+post.RewardsPerTreatment=filter(all.RewardsPerTreatment1, pre.post=="post")
+post.plot <-ggplot(post.RewardsPerTreatment, aes(group=Neonic, color=Neonic, y=SumBlueRewards/SumTotalRewards, x=Social_Cue))+ geom_point( position=pd,size=1)  + labs(x="Social Cue", y="Proportion of Visits to Blue Flowers") + theme_minimal() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + scale_color_hue() + scale_color_hue(name="Pesticide Exposure", labels=c("Not Exposed", "Exposed"))
+post.plot
+
+all.plot2
+
+#OKAY SO IT LOOKS LIKE
+NoPestPlot
+#Is the one to look at to compare how misleading cues are different than honest cues #and post.plot shows this as well, tbh
+pre.plot
+#Is the one to look at to compare NN to not-NN. It's only about day 1
+
+
+```
+
+#Reward Differences
+How did treatments affect how "well" the bees did?
+
+As of April 2 2020 this whole section is a mess because of some issue with boot.ci. It worked before though so ahhhhhhhhhhhhhhhhhhhh.
+
+```{r}
+#here's some code for the modeling
+#NNxSIapplicationGLM2=glmer(cbind(blue, not.blue)~pre.post*Neonic*Social_Cue+(1|bee), family=binomial, data=sum.colorcast)
+#summary(NNxSIapplicationGLM2)
+#Anova(NNxSIapplicationGLM2)
+
+#SameDay1OrderPlot=ggplot(data=Spread.Day1order, aes(group=Treatment_Type, color=Treatment_Type, x=Order, y=BluePref)) + facet_grid(.~Neonic) + geom_point(position=pd, size=1) + geom_line(aes(group=Treatment_Type), position=pd) +theme_classic() + coord_cartesian(xlim = c(1,5))+ labs(title="Bees' Preference for Blue Flowers on Day 1, Choices 1-5")
+#SameDay1OrderPlot
+
+#Start with day 1- did bees get different numbers of rewards overall? use dataframe a, which is a filter for pre on sum.colorcast
+
+RewardsPre=a %>%
+  group_by(Neonic,Social_Cue) %>%
+  summarise(MeanRewards=mean(blue), SdRewards=sd(blue), SumRewards=sum(blue))
+
+#BeeCount=a2 %>%
+#  group_by(Neonic, Social_Cue) %>%
+#  count(bee)
+#that's not right...
+
+
+#I'm not sure if SumBlue is right here- do I want the number of bees in each treatment, or the number of rewards in each treatment? I have rewards now, becuase that's easier. I thin I want bees.
+
+#confidence intervals  <----------------Ask Berry about this
+#mean=RewardsPre$BlueRewards
+#sd=SdBlue
+#n=number of bees in each treatment group?
+
+
+RewardsPreLM=lm(blue~Neonic*Social_Cue, data=a)
+summary(RewardsPreLM)
+
+RewardsPrePlot=ggplot(data=RewardsPre, aes(x=Social_Cue, y=MeanRewards, group=Neonic, color=Neonic)) + geom_point() +geom_line() +theme_classic()
+RewardsPrePlot
+
+
+
+#And similar for post data
+
+b=filter(sum.colorcast, pre.post == "post") %>%
+  mutate(Rewards=blue+not.blue)
+
+RewardsPostlm=lm(Rewards~Neonic*Social_Cue, data=b)
+summary(RewardsPostlm)
+
+
+RewardsPost=b %>% 
+  group_by(Neonic,Social_Cue) %>%
+  summarise(MeanRewards=mean(Rewards), SdRewards=sd(Rewards), SumRewards=sum(Rewards))
+
+RewardsPostPlot=ggplot(data=RewardsPost, aes(x=Social_Cue, y=MeanRewards, group=Neonic, color=Neonic)) + geom_point() +geom_line() +theme_classic() 
+RewardsPostPlot
+
+#adding in confidence intervals
+#poisson.test(c$MeanRewards, conf.level = 0.95 )$conf.int
+#confidence intervals need to be added to data that includes all bees, like sum.colorcast. but, becuase "rewards" means differnt things to pre and post data (i.e just blue or blue &green), confidence intervals need to be calculated separately (in a2 for pre and b for post)
+
+# function below taken from https://stats.stackexchange.com/questions/10926/how-to-calculate-confidence-interval-for-count-data-in-r
+exactPoiCI <- function (X, conf.level=0.95) {
+  alpha = 1 - conf.level
+  upper <- 0.5 * qchisq((1-(alpha/2)), (2*X))
+  lower <- 0.5 * qchisq(alpha/2, (2*X +2))
+  return(c(lower, upper)) }
+
+a2=mutate(a, Rewards=blue+0)
+a2=a2 %>% 
+   rowwise %>%
+   mutate(ConfintLow = exactPoiCI(Rewards)[1], ConfintHigh=exactPoiCI(Rewards)[2]) 
+b=b %>% 
+   rowwise %>%
+   mutate(ConfintLow = exactPoiCI(Rewards)[1], ConfintHigh=exactPoiCI(Rewards)[2]) 
+
+#selecting the upper and lower bounds from the conf int table to add to RewardsPerTreatment
+#RpTUpLow=select(RpTconfint, lower, upper )
+#RewardsPerTreatment2=bind_cols(RewardsPerTreatment2,RpTUpLow)
+#index = which(is.na(RewardsPerTreatment2$Combo))
+#RewardsPerTreatment2 = RewardsPerTreatment2[-index,]
+
+
+BootCI=read.csv("bootCI.SIxNN.csv")
+FlowerAvgBootCI=read.csv("FlowerAvgbootCI.SIxNN.csv")
+
+
+#cutting the "post" value of the last figure in half because 2 flowers.
+FlowerNumber=data.frame(c("pre","post"), c(1,2))
+colnames(FlowerNumber)=(c("pre.post","FlowerNumber"))
+FlowerNumber
+
+#all on one graph?
+
+c=rbind(a2,b) 
+c=full_join(c, FlowerNumber)
+
+c2=c %>%
+  group_by(Neonic,Social_Cue, pre.post) %>%
+  mutate(AvgRewards=Rewards/FlowerNumber) %>%
+  summarise(MeanRewards=mean(Rewards), SdRewards=sd(Rewards), SumRewards=sum(Rewards), MeanLow=mean(ConfintLow), MeanHigh=mean(ConfintHigh)) 
+
+Categories=c("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n")
+Categories=data.frame(Categories)
+c2=bind_cols(c2,Categories)
+c2=slice(c2, 1:5)
+c2=filter(c2, SumRewards > 12)
+
+class(c2$pre.post)
+c2$pre.post = factor(c2$pre.post, levels(factor(c2$pre.post))[c(2,1)])
+
+RewardsPlot=ggplot(data=c2, aes(x=pre.post, y=MeanRewards, group=Neonic, color=Neonic)) + geom_point() +geom_line() +theme_classic() +facet_grid(.~Social_Cue) 
+
+#+ geom_errorbar(aes(ymin=MeanLow, ymax=MeanHigh, width=.1))
+RewardsPlot
+
+#ahh ffs it's overdispersed with regular poisson confidence intervals
+
+#trying to make some confidence intervals using negative binomial model
+#require(glmmTMB)
+
+#m <- glmmTMB(
+#  MeanRewards ~ Categories,
+#  ziformula = ~ 0,
+#  family = truncated_nbinom1,
+#  data = c2
+#)
+#summary(m)
+#SugarCI=confint(m) #this in confint on my model coefficient,not estimates (the meanrewards)
+#SugarCI=as.data.frame(SugarCI)
+#SugarCI
+#selecting the upper and lower bounds from the conf int table to add to RewardsPerTreatment
+#SugarUpLow=select(SugarCI, "2.5 %", "97.5 %") %>%
+#  slice(1:14)
+#SugarUpLow
+#c2=bind_cols(c2,SugarUpLow)
+#index = which(is.na(RewardsPerTreatment2$Combo))
+#RewardsPerTreatment2 = RewardsPerTreatment2[-index,]
+
+#QuasiPOsisson GLM?
+#i should be running 
+RewardsQPglm <- glm(Rewards ~ Neonic*Social_Cue*pre.post, quasipoisson, data=c)
+summary(RewardsQPglm)
+#ANOVA
+#Anova(RewardsQPglm)
+#Analysis of Deviance Table (Type II tests)
+
+#Response: Rewards
+#                           LR Chisq Df Pr(>Chisq)    
+#Neonic                        0.034  1    0.85329    
+#Social_Cue                    6.389  2    0.04098 *  
+#pre.post                     69.981  1    < 2e-16 ***
+#Neonic:Social_Cue             0.640  2    0.72616    
+#Neonic:pre.post               1.843  1    0.17457    
+#Social_Cue:pre.post           5.120  2    0.07730 .  
+#Neonic:Social_Cue:pre.post    2.964  2    0.22716    
+#---
+#Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+#need a package that does confidence intervals for my estimates (meanrewards), like binom.confint (ended up using boot, at top)
+ratio <- function(d, w) sum(d$x * w)/sum(d$u * w)
+city.boot <- boot(city, ratio, R = 999)
+#boot.ci(city.boot, conf = c(0.90, 0.95),
+#        type = "bca")
+
+#get ready for how obnoxious this is
+
+#No Pesticides, Honest Social Cues, Pre
+cNPreHon=filter(c, Neonic=="n", pre.post=="pre", Social_Cue=="honest")
+cNPreHon=cNPreHon$Rewards
+samplemean <- function(cNPreHon, d) {
+  return(mean(cNPreHon[d]))
+}
+Nprehon.boot=boot(cNPreHon, samplemean, R=999)
+
+boot.ci(Nprehon.boot, conf=0.95, type="bca")
+#95%   ( 4.722,  6.739 )  
+
+#No Pesticides, Honest Social Cues, Post
+cNPoHon=filter(c, Neonic=="n", pre.post=="post", Social_Cue=="honest")
+cNPoHon=cNPoHon$Rewards
+samplemean2 <- function(cNPoHon, d) {
+  return(mean(cNPoHon[d]))
+}
+Npohon.boot=boot(cNPoHon, samplemean, R=999)
+
+boot.ci(Npohon.boot, conf=0.95, type="bca")
+#95%   ( 5.590,  7.841 ) 
+
+#No Pesticides, Misleading Social Cues, Post
+cNPoM=filter(c, Neonic=="n", pre.post=="post", Social_Cue=="misleading")
+cNPoM=cNPoM$Rewards
+samplemean2 <- function(cNPoM, d) {
+  return(mean(cNPoM[d]))
+}
+NpoM.boot=boot(cNPoM, samplemean, R=999)
+
+boot.ci(NpoM.boot, conf=0.95, type="bca")
+#95%   ( 6.200,  8.697 )
+
+#No Pesticides, Misleading Social Cues, Pre
+cNPrM=filter(c, Neonic=="n", pre.post=="pre", Social_Cue=="misleading")
+cNPrM=cNPrM$Rewards
+samplemean2 <- function(cNPrM, d) {
+  return(mean(cNPrM[d]))
+}
+NprM.boot=boot(cNPrM, samplemean, R=999)
+
+boot.ci(NprM.boot, conf=0.95, type="bca")
+#95%   ( 2.827,  4.846 ) 
+
+#No Pesticides, Control Social Cues, Pre
+cNPrC=filter(c, Neonic=="n", pre.post=="pre", Social_Cue=="control")
+cNPrC=cNPrC$Rewards
+samplemean2 <- function(cNPrC, d) {
+  return(mean(cNPrC[d]))
+}
+NprC.boot=boot(cNPrC, samplemean, R=999)
+boot.ci(NprC.boot, conf=0.95, type="bca")
+#95%   ( 4.143,  6.184 ) 
+
+#No Pesticides, Control Social Cues, Post
+cNPoC=filter(c, Neonic=="n", pre.post=="post", Social_Cue=="control")
+cNPoC=cNPoC$Rewards
+samplemean2 <- function(cNPoC, d) {
+  return(mean(cNPoC[d]))
+}
+NpoC.boot=boot(cNPoC, samplemean, R=999)
+boot.ci(NpoC.boot, conf=0.95, type="bca")
+#95%   ( 7.569,  9.961 )  
+
+#No Pesticides, Control Social Cues, Post
+cNPoC=filter(c, Neonic=="n", pre.post=="post", Social_Cue=="control")
+cNPoC=cNPoC$Rewards
+samplemean2 <- function(cNPoC, d) {
+  return(mean(cNPoC[d]))
+}
+NpoC.boot=boot(cNPoC, samplemean, R=999)
+boot.ci(NpoC.boot, conf=0.95, type="bca")
+#95%   ( 7.569,  9.961 )  
+
+
+#Yes, did use pesticides below
+
+#YesPesticides, Honest Social Cues, Pre
+cYPreHon=filter(c, Neonic=="y", pre.post=="pre", Social_Cue=="honest")
+cYPreHon=cYPreHon$Rewards
+samplemean <- function(cYPreHon, d) {
+  return(mean(cYPreHon[d]))
+}
+Yprehon.boot=boot(cYPreHon, samplemean, R=999)
+
+boot.ci(Yprehon.boot, conf=0.95, type="bca")
+#95%   ( 3.216,  5.704 ) 
+
+#Yes Pesticides, Honest Social Cues, Post
+cYPoHon=filter(c, Neonic=="y", pre.post=="post", Social_Cue=="honest")
+cYPoHon=cYPoHon$Rewards
+samplemean2 <- function(cYPoHon, d) {
+  return(mean(cYPoHon[d]))
+}
+Ypohon.boot=boot(cYPoHon, samplemean, R=999)
+
+boot.ci(Ypohon.boot, conf=0.95, type="bca")
+#95%   ( 6.793,  9.862 ) 
+
+#Yes Pesticides, Misleading Social Cues, Post
+cYPoM=filter(c, Neonic=="y", pre.post=="post", Social_Cue=="misleading")
+cYPoM=cYPoM$Rewards
+samplemean2 <- function(cYPoM, d) {
+  return(mean(cYPoM[d]))
+}
+YpoM.boot=boot(cYPoM, samplemean, R=999)
+
+boot.ci(YpoM.boot, conf=0.95, type="bca")
+#95%   ( 6.05,  9.55 ) 
+
+#Yes Pesticides, Misleading Social Cues, Pre
+cYPrM=filter(c, Neonic=="y", pre.post=="pre", Social_Cue=="misleading")
+cYPrM=cYPrM$Rewards
+samplemean2 <- function(cYPrM, d) {
+  return(mean(cYPrM[d]))
+}
+YprM.boot=boot(cYPrM, samplemean, R=999)
+
+boot.ci(YprM.boot, conf=0.95, type="bca")
+#95%   ( 2.458,  5.917 )  
+
+#yes Pesticides, Control Social Cues, Pre
+cYPrC=filter(c, Neonic=="y", pre.post=="pre", Social_Cue=="control")
+cYPrC=cYPrC$Rewards
+samplemean2 <- function(cYPrC, d) {
+  return(mean(cYPrC[d]))
+}
+YprC.boot=boot(cYPrC, samplemean, R=999)
+boot.ci(YprC.boot, conf=0.95, type="bca")
+#95%    ( 3.857,  5.893 )  
+
+#yes Pesticides, Control Social Cues, Post
+cYPoC=filter(c, Neonic=="y", pre.post=="post", Social_Cue=="control")
+cYPoC=cYPoC$Rewards
+samplemean2 <- function(cYPoC, d) {
+  return(mean(cYPoC[d]))
+}
+YpoC.boot=boot(cYPoC, samplemean, R=999)
+boot.ci(YpoC.boot, conf=0.95, type="bca")
+#95%  ( 6.458,  9.348 )
+
+
+
+
+#plot but now with confidence intervals
+c3=full_join(c2, BootCI)
+c3=full_join(c3, FlowerAvgBootCI)
+
+#making a lil' dataframe to that assigns pre to one flower and post to two flowers
+FlowersNumber=c(1,2)
+pre.post=c("pre","post")
+FlowerNumbByDay <- data.frame(pre.post, FlowersNumber, stringsAsFactors=FALSE)
+c3=full_join(c3,FlowerNumbByDay)
+
+c3=mutate(c3, AvgPrePost= MeanRewards/FlowersNumber)
+class(c3$pre.post)
+c3$pre.post = factor(c3$pre.post, levels(factor(c3$pre.post))[c(2,1)])
+
+RewardsPlotCI=ggplot(data=c3, aes(x=pre.post, y=MeanRewards, group=Neonic, color=Neonic)) + geom_point() + geom_line() +theme_classic() +facet_grid(.~Social_Cue)+ geom_errorbar(aes(ymin=bootLO, ymax=bootHI, width=.1), position=pd)
+
+#+ geom_errorbar(aes(ymin=MeanLow, ymax=MeanHigh, width=.1))
+RewardsPlotCI
+
+
+
+
+RewardsPlotAvgd=ggplot(data=c3, aes(x=pre.post, y=AvgPrePost, group=Neonic, color=Neonic)) + geom_point() + geom_line() +theme_classic() +facet_grid(.~Social_Cue)
+
+#geom_errorbar(aes(ymin=bootLO, ymax=bootHI, width=.1), position=pd)
+
+RewardsPlotAvgd
+
+#re-doing CI for post values that are now halved
+
+
+
+#yes Pesticides, Control Social Cues, Post
+cYPoC=filter(c, Neonic=="y", pre.post=="post", Social_Cue=="control")
+cYPoC=cYPoC$AvgRewards
+samplemean2 <- function(cYPoC, d) {
+  return(mean(cYPoC[d]))
+}
+#YpoC.boot=boot(cYPoC, samplemean, R=999)
+boot.ci(YpoC.boot, conf=0.95, type="bca")
+#95%  95%   ( 3.304,  4.804 ) 
+
+#Yes Pesticides, Honest Social Cues, Post
+cYPoHon=filter(c, Neonic=="y", pre.post=="post", Social_Cue=="honest")
+cYPoHon=cYPoHon$AvgRewards
+samplemean2 <- function(cYPoHon, d) {
+  return(mean(cYPoHon[d]))
+}
+#Ypohon.boot=boot(cYPoHon, samplemean, R=999)
+
+boot.ci(Ypohon.boot, conf=0.95, type="bca")
+#95%   ( 3.431,  5.034 )  
+
+#Yes Pesticides, Misleading Social Cues, Post
+cYPoM=filter(c, Neonic=="y", pre.post=="post", Social_Cue=="misleading")
+cYPoM=cYPoM$AvgRewards
+samplemean2 <- function(cYPoM, d) {
+  return(mean(cYPoM[d]))
+}
+#YpoM.boot=boot(cYPoM, samplemean, R=999)
+
+boot.ci(YpoM.boot, conf=0.95, type="bca")
+#95%    ( 3.077,  4.750 ) 
+
+
+#No Pesticides, Control Social Cues, Post
+cNPoC=filter(c, Neonic=="n", pre.post=="post", Social_Cue=="control")
+cNPoC=cNPoC$AvgRewards
+samplemean2 <- function(cNPoC, d) {
+  return(mean(cNPoC[d]))
+}
+#NpoC.boot=boot(cNPoC, samplemean, R=999)
+boot.ci(NpoC.boot, conf=0.95, type="bca")
+#95%   ( 3.826,  5.000 ) 
+
+#No Pesticides, Honest Social Cues, Post
+cNPoHon=filter(c, Neonic=="n", pre.post=="post", Social_Cue=="honest")
+cNPoHon=cNPoHon$AvgRewards
+samplemean2 <- function(cNPoHon, d) {
+  return(mean(cNPoHon[d]))
+}
+#Npohon.boot=boot(cNPoHon, samplemean, R=999)
+
+boot.ci(Npohon.boot, conf=0.95, type="bca")
+#95%   ( 2.852,  3.884 )  
+
+#No Pesticides, Misleading Social Cues, Post
+cNPoM=filter(c, Neonic=="n", pre.post=="post", Social_Cue=="misleading")
+cNPoM=cNPoM$AvgRewards
+samplemean2 <- function(cNPoM, d) {
+  return(mean(cNPoM[d]))
+}
+#NpoM.boot=boot(cNPoM, samplemean, R=999)
+
+boot.ci(NpoM.boot, conf=0.95, type="bca")
+#95%   ( 3.10,  4.36 ) 
+
+
+
+
+pre.plot <-ggplot(pre.RewardsPerTreatment, aes(group=Neonic, color=Neonic, y=SumBlueRewards/SumTotalRewards, x=Social_Cue))+ geom_point( position=pd,size=3)  + labs(x="Social Cue", y="Proportion of Visits to Blue Flowers", title="Proportion of Visits to Blue Flowers on Day 1 by Neonicotinoid Exposure") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + scale_color_hue() + scale_color_hue(name="Pesticide Exposure", labels=c("Not Exposed", "Exposed")) + geom_hline(yintercept=0.5,linetype="dashed", color = "black")
+
+
+RewardsPlotAvgdCI=ggplot(data=c3, aes(x=pre.post, y=AvgPrePost, group=Neonic, color=Neonic)) + geom_point(size=3) + geom_line(size=3) +theme_classic() +facet_grid(.~Social_Cue)+ geom_errorbar(aes(ymin=AvgbootLO, ymax=AvgbootHI, width=.1), position=pd) + scale_color_hue(name="Pesticide Exposure", labels=c("Not Exposed", "Exposed")) + labs(x="Day of Foraging", y="Amount of Sugar-Water Received per Rewarding Flower", title="Number of Sugar-Water Rewards Received")
+
+#geom_errorbar(aes(ymin=bootLO, ymax=bootHI, width=.1), position=pd)
+
+RewardsPlotAvgdCI
+
+```
+
+
+
+#Committe Member Questions from back in the day
+Chris asked: You talked about the interaction effect.  If you just look at the pre data, is there a significant
+effect of treatment, especially if you compare the control to the blue flower with dead bee?  In other words, can you replicate the effect of social cues?
+
+Berry interprets this as 
+
+
+
+
+
+
+
+
+
+{r permutation test}
+#require(coin)      #can't use coin without new r version. the p values as written only represent summer and april data, not october data
+#require(FSA)
+#http://rcompanion.org/handbook/K_01.html
+#Summarize(Length ~ Hand,   data=Data,   digits=3)
+
+#   Hand  n nvalid   mean    sd  min    Q1 median    Q3  max percZero
+#1  Left 16     16 17.356 1.948 13.5 16.35  17.50 18.52 21.1        0
+#2 Right 16     16 17.594 1.972 13.7 16.35  17.55 18.90 21.5        0
+#independence_test(Length ~ Hand, data = Data)
+
+#On Day 1, do different social cues yield different reward levels?
+independence_test(Rewards~Social_Cue, data=a2) #p=.025
+independence_test(Rewards~Neonic, data=a2) #p=.3131
+
+
+a2Honest=filter(a2, Social_Cue == "honest")
+independence_test(Rewards~Neonic, data=a2Honest) #p=.079
+
+a2control=filter(a2, Social_Cue == "control")
+independence_test(Rewards~Neonic, data=a2control) #p=.605
+
+a2misleading=filter(a2, Social_Cue == "misleading")
+independence_test(Rewards~Neonic, data=a2misleading) #p=.861
+
+#On Day 2, do different social cues yield different reward levels?
+independence_test(Rewards~Social_Cue, data=b) #p=.1288
+independence_test(Rewards~Neonic, data=b) #p=.5057
+
+
+bHonest=filter(b, Social_Cue == "honest")
+independence_test(Rewards~Neonic, data=bHonest) #p=.1369
+
+bcontrol=filter(b, Social_Cue == "control")
+independence_test(Rewards~Neonic, data=bcontrol) #p=.5391
+
+bmisleading=filter(b, Social_Cue == "misleading")
+independence_test(Rewards~Neonic, data=bmisleading) #p=.6911
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#graphs on graphs
+I'm pretty sure this whole section only has April Data, while sections above have data from all trials.
+i.e. this secton is kinda worthless
+
+``{r graphs and CIs}
+
+#putting summary stats in sum.colordata so I can plot them
+
+#head(sum.colordata)
+
+color.visits=group_by(Full.Data.All, color) %>%
+  summarise(Rewards=sum(reward.x))
+
+RewardsPerBee=sum.colordata %>%
+  group_by(Treatment_Type,pre.post, bee, new.color)%>%
+  summarise(TotalReward=sum(reward.x)) %>%
+  arrange(bee)
+
+#RewardsPerBee
+
+#need to cast this so that last two columns are blue column and not blue column
+#...in retrospect, i think i coud just use sum.colorcast, above.
+#head(sum.colorcast)
+
+Combo=read.csv("NN_SI_Combo.csv")
+
+RewardsPerTreatment=sum.colorcast %>%
+  mutate(BluePreference=blue/(blue+not.blue)) %>%
+  group_by(pre.post,Neonic,Treatment_Type) %>%
+  summarise(AvgBluePreference=mean(BluePreference), SdBluePreference=sd(BluePreference), SumBlueRewards=sum(blue), SumTotalRewards=sum(blue+not.blue)) %>%
+  filter (SumBlueRewards>0)
+
+RewardsPerTreatment1=left_join(sum.colorcast,Combo,by=c("Neonic","Treatment_Type"))
+RewardsPerTreatment2= RewardsPerTreatment1 %>%
+  mutate(BluePreference=blue/(blue+not.blue))  %>%
+  group_by(pre.post,Combo, Neonic, Treatment_Type) %>% 
+  mutate(N=n()) %>%
+  group_by(pre.post,Combo,N, Neonic, Treatment_Type) %>%      #i did this to keep N as a column
+  summarise(AvgBluePreference=mean(BluePreference), SdBluePreference=sd(BluePreference), SumBlueRewards=sum(blue), SumTotalRewards=sum(blue+not.blue)) %>%
+  filter (SumBlueRewards>0)
+
+#########
+
+
+#calculating confidence intervals
+require(binom)
+RpTconfint=binom.confint(x=RewardsPerTreatment2$SumBlueRewards, n=RewardsPerTreatment2$SumTotalRewards, conf.level=.95, methods = "agresti-coull")
+RpTconfint
+#selecting the upper and lower bounds from the conf int table to add to RewardsPerTreatment
+RpTUpLow=select(RpTconfint, lower, upper )
+RewardsPerTreatment2=bind_cols(RewardsPerTreatment2,RpTUpLow)
+index = which(is.na(RewardsPerTreatment2$Combo))
+RewardsPerTreatment2 = RewardsPerTreatment2[-index,]
+
+
+
+
+#plot 2- berry's aesthetic
+
+pd <- position_dodge(width = 0.1)
+
+plot2 <- ggplot(RewardsPerTreatment2, aes(color = Combo, y = AvgBluePreference, x = pre.post))
+plot2 <- plot2 + geom_point(position=pd) + geom_line(aes(group = Combo), position=pd) 
+plot2 = plot2 + labs(x="Pre v Post", y="Proportion of Visits to Blue Flowers")
+plot2= plot2 + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,2.2), ylim = c(0.1,1.0))
+
+
+plot2
+
+#offsetting the error bars example from stack exchange
+#pd <- position_dodge(width = 0.4)
+
+#ggplot(YearlyDensity, aes(x = Year, y = mean, colour = Station, group = Station)) +
+#  geom_errorbar(aes(ymin = mean-se, ymax = mean+se),
+#                colour = "black", width = 0.2, position = pd) +
+#  geom_line(size = .8, position = pd) +
+#  geom_point(size = 4, shape = 18, position = pd) +
+
+#mdf$variable <- as.numeric(as.character(mdf$variable))
+RewardsPerTreatment2$Combo <-as.character(as.numeric(RewardsPerTreatment2$Combo))
+
+pd <- position_dodge(width = 0.1)
+
+plot3 <- ggplot(RewardsPerTreatment2, aes(group=Combo, color = Combo, y = AvgBluePreference, x = pre.post)) + geom_point( position=pd,size=1) + geom_line(aes(group = Combo), position=pd) + labs(x="Pre v Post", y="Proportion of Visits to Blue Flowers") + theme_minimal() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.1,1.0))+ scale_color_hue(labels=c("NN honest", "NN misleading", "NN control", "naive honest", "naive misleading", "naive control"))
+  
+  
+  
+#scale_color_brewer(palette ="Set1" ) + scale_fill_discrete(name="Treatment", labels=c("NN honest", "NN misleading", "NN control", "naive honest", "naive misleading", "naive control"))
+
+plot3
+
+```
+
+#Analyzing Bee Reward Order
+
+template=
+sis32=sis3 %>%
+  group_by(Sister) %>%
+  mutate(Order2=1:n())
+  
+
+
+
+There are NAs coming up in the ordered data and the switch data which follows. That's recording a tag (for 1B-29 and 60-27) that wasn't part of any treatment or colony types. I think it's maybe a short-term tester tag? Regardless, it's two "bees"" that aren't anywhere on the Bombus ID data spreadsheet (which is hand-typed to include all bees which are tagged). So I'm deleting them.
+
+``{r}
+OrderableData=all.colordata %>%
+  select(bee, Neonic, Treatment_Type, reward.x, color, Day, Colony, t.forage)
+OrderableData=OrderableData %>%
+  filter(reward.x==1) 
+OrderableData=OrderableData %>%
+  arrange(bee, t.forage) %>%
+  group_by(bee) %>%
+  mutate(Order=1:n())
+
+Check5=filter(OrderableData, Colony=="4")
+
+#Separate day 1 and day 2
+
+Day1order=all.colordata %>%
+  select(bee, Neonic, Treatment_Type, reward.x, color, Day, Colony, t.forage) %>%
+  filter(reward.x==1, Day=="treatment") %>%
+  arrange(bee, t.forage) %>%
+  group_by(bee) %>%
+  mutate(Order=1:n())
+
+
+#Day1order[is.na(Day1order)] <-"what"
+
+#Full.Test1 =filter(Full.Test1, bee !="A2-25-66-01-0B-00-12-E0")
+
+Day1order=filter(Day1order, bee != "1B-29-66-01-0B-00-12-E0")
+Day1order=filter(Day1order, bee != "60-27-66-01-0B-00-12-E0")
+
+Day2order=all.colordata %>%
+  select(bee, Neonic, Treatment_Type, reward.x, color, Day, Colony, t.forage) %>%
+  filter(reward.x==1, Day=="test") %>%
+  arrange(bee, t.forage) %>%
+  group_by(bee) %>%
+  mutate(Order=1:n())
+
+  
+#have to melt data again to make graph
+Meltable.Day1order= Day1order %>%
+  ungroup() %>%
+  select(Order, Neonic, Treatment_Type, color) %>%
+  group_by(Neonic, Treatment_Type, Order) %>%
+  arrange(Neonic, Treatment_Type, Order) %>%
+  count(Neonic, Treatment_Type, color, Order)
+
+Spread.Day1order=spread(data=Meltable.Day1order, key=color, value=n)
+
+#Somehow in the spread I created a bunch of rows that were NA for treament and neonic. However, all of my levels for all of those factors are present, so I'm gonna assume that's junk right now.
+
+Meltable.Day2order= Day2order %>%
+  ungroup() %>%
+  select(Order, Neonic, Treatment_Type, color) %>%
+  group_by(Neonic, Treatment_Type, Order) %>%
+  arrange(Neonic, Treatment_Type, Order) %>%
+  count(Neonic, Treatment_Type, color, Order)
+
+Spread.Day2order=spread(data=Meltable.Day2order, key=color, value=n)
+Spread.Day2order[is.na(Spread.Day2order)] <-0
+
+Spread.Day2order=mutate(Spread.Day2order, BluePref=blue.test/(blue.test+violet.test))
+
+Day2OrderPlot=ggplot(data=Spread.Day2order, aes(group=Treatment_Type, color=Treatment_Type, x=Order, y=BluePref)) + facet_grid(.~Neonic) + geom_point(position=pd, size=1) + geom_line(aes(group=Treatment_Type), position=pd) +theme_classic()
+Day2OrderPlot
+
+SameDay2OrderPlot=ggplot(data=Spread.Day2order, aes(group=Treatment_Type, color=Treatment_Type, x=Order, y=BluePref)) + facet_grid(.~Neonic) + geom_point(position=pd, size=1) + geom_line(aes(group=Treatment_Type), position=pd) +theme_classic()+ coord_cartesian(xlim = c(1,5))+ labs(title="Bees' Preference for Blue Flowers on Day 2, Choices 1-5")
+SameDay2OrderPlot
+#there are also NAs where there should be 0s. changing those...
+
+Spread.Day1order[is.na(Spread.Day1order)] <-0
+#Spread.Day1order.Clean=slice(Spread.Day1order, 1:83)
+#index1 = which(is.na(Spread.Day1order.Clean))
+#Spread.Day1order.Clean = Spread.Day1order.Clean[-index1,]
+
+Spread.Day1order=mutate(Spread.Day1order,BluePref=blue.treatment/(blue.treatment+green.treatment))
+
+Day1OrderPlot=ggplot(data=Spread.Day1order, aes(group=Treatment_Type, color=Treatment_Type, x=Order, y=BluePref)) + facet_grid(.~Neonic) + geom_point(position=pd, size=1) + geom_line(aes(group=Treatment_Type), position=pd) +theme_classic()  + labs(title="Bees' Preference for Blue Flowers on Day 1")
+Day1OrderPlot
+
+#same plot as above, but artificialy limited to the average number of visits that at leat 10 bees made (i.e. up to 6 on x axis)
+
+SameDay1OrderPlot=ggplot(data=Spread.Day1order, aes(group=Treatment_Type, color=Treatment_Type, x=Order, y=BluePref)) + facet_grid(.~Neonic) + geom_point(position=pd, size=1) + geom_line(aes(group=Treatment_Type), position=pd) +theme_classic() + coord_cartesian(xlim = c(1,5))+ labs(title="Bees' Preference for Blue Flowers on Day 1, Choices 1-5")
+SameDay1OrderPlot
+
+
+#Plotting individual bees
+#Order.colordata=full_join(1OrderableData, color.treatments, by="color")
+Allbee.Order.Day1=select(Day1order, bee, Neonic, Treatment_Type, Order,color)
+#index = which(is.na(Allbee.Order.Day1))
+#Allbee.Order.Day1 = Allbee.Order.Day1[-index,]
+
+
+AllbeeDay1Plot=ggplot(data=Allbee.Order.Day1, aes(group=bee, color=bee, x=Order, y=color)) + facet_grid(Neonic~Treatment_Type) + geom_point( size=1) + geom_line(aes(group=bee)) +theme_classic()+ guides(color="none")
+AllbeeDay1Plot
+#+ coord_cartesian(xlim = c(1,5))
+```
+all.colormelt=melt(meltable.colordata)
+
+all.colorcast=dcast(all.colormelt, bee+Colony+Neonic+Social_Cue+pre.post~new.color, fun.aggregate=sum)
+
+all.sum.colordata=all.colordata %>%
+  group_by(Neonic, Treatment_Type, Colony, color)  %>%
+  summarise(sums=sum(reward.x))
+
+Trtmnt=read.csv("Trtmnt.csv")
+all.colordata=full_join(all.colordata,Trtmnt, by="Treatment_Type")
+
+meltable.colordata=all.colordata %>%
+  select(bee, Colony, Neonic, Social_Cue, reward.x, pre.post,new.color)
+
+meltable.colordata$Colony <-as.character(as.numeric(meltable.colordata$Colony))
+
+
+
+summary(all.colorcast)
+
+#Switching Flowers
+
+code from Practice.rmd 
+
+sis34=as.matrix(sis33)
+Swatch=c("Start")
+for(i in 2:nrow(sis35)){
+            ## population size is in column 2
+            ## compare pop size to previous pop size and create trend object
+             if(sis35[i,1] != sis35[i-1,1]) Swatch[i] = "Start" else if(sis35[i,4] != sis35[i-1,4]) Swatch[i] = "Switch" else Swatch[i] = "Same"
+}
+Swatch
+#now working on keeping the sister the same
+sis37=cbind(sis35, Swatch)
+sis37
+sis38=as.data.frame(sis37)
+sis38=select(sis38, Sister, State, Children, Order2, Swatch)
+sis38
+``{r}
+
+
+Day1orderM=as.matrix(Day1order)
+Switch=c("Start")
+for(i in 2:nrow(Day1orderM)){
+             if(Day1orderM[i,1] != Day1orderM[i-1,1]) Switch[i] = "Start" else if(Day1orderM[i,5] != Day1orderM[i-1,5]) Switch[i] = "Switch" else Switch[i] = "Same"
+}
+Day1orderS=cbind(Switch, Day1orderM)
+Day1orderSwitch=as.data.frame(Day1orderS)
+
+
+
+#Preparing Data to plot
+SMeltable.Day1order=Day1orderSwitch %>%
+  ungroup() %>%
+  select(Switch, Neonic, Treatment_Type) %>%
+  group_by(Neonic, Treatment_Type, Switch) %>%
+  arrange(Neonic, Treatment_Type, Switch) %>%
+  count(Neonic, Treatment_Type, Switch) 
+
+Spread.SwitchDay1=spread(data=SMeltable.Day1order, key=Switch, value=n)
+Spread.SwitchDay1=Spread.SwitchDay1 %>%
+  mutate(SwitchPercent=Switch/(Switch+Same+Start)) %>%
+  mutate(SamePercent=Same/(Switch+Same+Start)) %>%
+  mutate(Total=Switch+Same+Start)
+
+SwitchDay1Plot=ggplot(data=Spread.SwitchDay1, aes(x=Neonic, group= Treatment_Type, color=Treatment_Type, fill=Treatment_Type, y=SwitchPercent)) + geom_col(position = position_dodge()) + theme_classic() 
+#SwitchDay1Plot
+#has no confidence intervals, hold on.
+
+#calculating confidence intervals
+Day1SwitchConfInt=binom.confint(x=Spread.SwitchDay1$Switch, n=Spread.SwitchDay1$Total, conf.level=.95, methods="agresti-coull")
+Day1SwitchConfIntSelect=select(Day1SwitchConfInt, lower, upper)
+Spread.SwitchDay1=bind_cols(Spread.SwitchDay1, Day1SwitchConfIntSelect)
+
+#Plotting again, but better this time
+plot3 <- ggplot(RewardsPerTreatment2, aes(group=Combo, color = Combo, y = AvgBluePreference, x = pre.post)) + geom_point( position=pd,size=1) + geom_line(aes(group = Combo), position=pd) + labs(x="Pre v Post", y="Proportion of Visits to Blue Flowers") + theme_minimal()  + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.1,1.0))+ scale_color_hue(labels=c("NN honest", "NN misleading", "NN control", "naive honest", "naive misleading", "naive control"))
+
+Day1SwitchPlot=ggplot(data=Spread.SwitchDay1, aes(x=Neonic, group= Treatment_Type, color=Treatment_Type, fill=Treatment_Type, y=Switch/Total)) + geom_point(position=pd, size=1) + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + labs(title="Proportion of visits where bee switched to the other flower")
+
+Day1SwitchPlot
+
+#How about the proportion of visits where bees sample the green flower, even after they know that blue is better?
+    #I would need the number of visits to green after a bee has been to both blue and green.
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
