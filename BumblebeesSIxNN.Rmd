@@ -871,11 +871,11 @@ naive.RewardsPerTreatment$Social_Cue = factor(naive.RewardsPerTreatment$Social_C
 
 Check5=filter(naive.RewardsPerTreatment, Colony=="4")
 
-naive.plot <- ggplot(naive.RewardsPerTreatment, aes(group=Social_Cue, color = Social_Cue, y = SumBlueRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Social_Cue), position=pd) + labs(x="Pre v Post", y="Proportion of Visits to Blue Flowers") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.2,0.9))+ scale_color_hue() + facet_grid(.~Colony)
+naive.plot <- ggplot(naive.RewardsPerTreatment, aes(group=Social_Cue, color = Social_Cue, y = SumBlueRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Social_Cue), position=pd) + labs(x="Pre v Post", y="Proportion of Visits to Blue Flowers") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.2,0.9))+ scale_color_hue() + facet_grid(.~Colony)+scale_color_manual(values = c(control="darkgoldenrod", honest="cornflowerblue", misleading="darkolivegreen3"))
 
 naive.plot
 
-NoPestPlot <- ggplot(all.RewardsPerTreatmentNoPesticides, aes(group=Social_Cue, color = Social_Cue, y = SumBlueRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Social_Cue),size=3, position=pd) + labs(x="Day of Foraging", y="Proportion of Visits to Blue Flowers", title="Proportion of Visits to Blue Flowers for Bees Trained With Different Social Cues") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue() + geom_hline(yintercept=0.5,linetype="dashed", color = "black") + scale_fill_discrete(name = "Social Cue Treatment")
+NoPestPlot <- ggplot(all.RewardsPerTreatmentNoPesticides, aes(group=Social_Cue, color = Social_Cue, y = SumBlueRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Social_Cue),size=3, position=pd) + labs(x="Day of Foraging", y="Proportion of Visits to Blue Flowers", title="Proportion of Visits to Blue Flowers for Bees Trained With Different Social Cues") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue() + geom_hline(yintercept=0.5,linetype="dashed", color = "black") + scale_fill_discrete(name = "Social Cue Treatment")+scale_color_manual(values = c(control="darkgoldenrod", honest="cornflowerblue", misleading="darkolivegreen4"))
 
 
 #all the same but just for pre
@@ -884,6 +884,10 @@ pre.plot <-ggplot(pre.RewardsPerTreatment, aes(group=Neonic, color=Neonic, y=Sum
 
 post.RewardsPerTreatment=filter(all.RewardsPerTreatment1, pre.post=="post")
 post.plot <-ggplot(post.RewardsPerTreatment, aes(group=Neonic, color=Neonic, y=SumBlueRewards/SumTotalRewards, x=Social_Cue))+ geom_point( position=pd,size=1)  + labs(x="Social Cue", y="Proportion of Visits to Blue Flowers") + theme_minimal() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + scale_color_hue() + scale_color_hue(name="Pesticide Exposure", labels=c("Not Exposed", "Exposed"))
+
+#scale_color_manual(values = c(y="lawngreen", n="lightslategrey"))
+#these are the colors I want, but if I add them as-is I overwrite the naming of y and n. Figure that out later.
+
 post.plot
 
 all.plot2
@@ -1719,7 +1723,7 @@ Spread.SwitchDay1=bind_cols(Spread.SwitchDay1, Day1SwitchConfIntSelect)
 #Plotting again, but better this time
 #plot3 <- ggplot(RewardsPerTreatment2, aes(group=Combo, color = Combo, y = AvgBluePreference, x = pre.post)) + geom_point( position=pd,size=1) + geom_line(aes(group = Combo), position=pd) + labs(x="Pre v Post", y="Proportion of Visits to Blue Flowers") + theme_minimal()  + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.1,1.0))+ scale_color_hue(labels=c("NN honest", "NN misleading", "NN control", "naive honest", "naive misleading", "naive control"))
 
-Day1SwitchPlot=ggplot(data=Spread.SwitchDay1, aes(x=Neonic, group= Social_Cue, color=Social_Cue, fill=Social_Cue, y=Switch/Total)) + geom_point(position=pd, size=1) + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + labs(title="Proportion of visits where bee switched to the other flower")
+Day1SwitchPlot=ggplot(data=Spread.SwitchDay1, aes(x=Neonic, group= Social_Cue, color=Social_Cue, fill=Social_Cue, y=Switch/Total)) + geom_point(position=pd, size=1) + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + labs(title="Proportion of visits where bee switched to the other flower")+scale_color_manual(values = c(control="darkgoldenrod", honest="cornflowerblue", misleading="darkolivegreen4"))
 
 Day1SwitchPlot
 
@@ -1729,12 +1733,175 @@ Day1SwitchPlot
 
 
 
+#What if all the flowers are blue?
+I ran a few rounds of data collection in the foraging chamber in which the flowers were always blue. I did this becuase Donna Maney brought up at my committe meeting that it's possible that bees aren't learning flower color, but are instead learning something about the position of the rewarding and not-rewarding flowers. Michal suggested I collect data with all blue flowers (no neonics, yes social cues) to address this. My data colelction got cut off by foraging chamber woes followed by David's data collection followed by COVID. So. This is what I have.
+
+
+```{r}
+#importing and naming each data set
+bTr.1347=read.csv("foragingdata_2020.2.28.1347.csv")
+colnames(bTr.1347) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+bTr.1440=read.csv("foragingdata_2020.2.28.1440.csv")
+colnames(bTr.1440) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+bTr.1536=read.csv("foragingdata_2020.2.28.1536.csv")
+colnames(bTr.1536) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+bTr.1613=read.csv("foragingdata_2020.2.28.1613.csv")
+colnames(bTr.1613) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+bTr.1717=read.csv("foragingdata_2020.2.28.1717.csv")
+colnames(bTr.1717) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+bTe.1321=read.csv("foragingdata_2020.2.29.1321.csv")
+colnames(bTe.1321) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+bTe.1358=read.csv("foragingdata_2020.2.29.1358.csv")
+colnames(bTe.1358) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+bTe.1434=read.csv("foragingdata_2020.2.29.1434.csv")
+colnames(bTe.1434) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+bTe.1244=read.csv("foragingdata_2020.2.29.1244.csv")
+colnames(bTe.1244) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+bTe.1208=read.csv("foragingdata_2020.2.29.1208.csv")
+colnames(bTe.1208) = c("date", "t.day", "flower", "bee", "t.forage", "reward")
+
+
+#importing the data set that describes the shapes of flowers, treatment types, etc.
+    #this file has a formula for changing space-separated bee id's into dash-separated bee id names
+bee.info.blue=read.csv("BombusIDallblue.csv")
+
+#knitting together data sets into "treatment" files 
+bFull.Treatment1=rbind(bTr.1347,bTr.1440,bTr.1536,bTr.1613,bTr.1717)
+
+#knitting together data sets into "test" files
+bFull.Test1=rbind(bTe.1321,bTe.1358,bTe.1434,bTe.1244,bTe.1208)
+
+
+#removing tester flower from both data sets
+bFull.Treatment1 =filter(bFull.Treatment1, bee !="CE-28-66-01-0B-00-12-E0")
+bFull.Treatment1 =filter(bFull.Treatment1, bee !="D9-28-66-01-0B-00-12-E0")
+bFull.Test1 =filter(bFull.Test1, bee !="CE-28-66-01-0B-00-12-E0")
+bFull.Test1 =filter(bFull.Test1, bee !="D9-28-66-01-0B-00-12-E0")
+
+
+#counting visits and rewards during Treatment runs
+#tbl_df(Full.Treatment1)
+bTotal.visits=count(bFull.Treatment1, bee)
+#Total.visits
+bTotal_Rewards=bFull.Treatment1%>%
+  group_by(bee) %>%
+  summarise(Rewards=sum(reward))
+#Total_Rewards  
+
+#Total_Rewards
+bTotal_RV=left_join(bTotal.visits, bTotal_Rewards, by="bee")
+index = which(is.na(bTotal_RV$Rewards))
+bTotal_RV = bTotal_RV[-index,]
+colnames(bTotal_RV)=c("bee", "Treatment.Visits", "Treatment.Rewards")
+#Total_RV
+bAvg.Visits=summarise(bTotal_RV, Treatment.visits=mean(Treatment.Visits), Treatment.reward=mean(Treatment.Rewards))
+#Avg.Visits
+
+
+#Counting visits and rewards during test runs
+#tbl_df(Full.Test1)
+bTotal.visitsT=count(bFull.Test1, bee)
+#Total.visitsT
+bTotal_RewardsT=bFull.Test1%>%
+  group_by(bee) %>%
+  summarise(Rewards=sum(reward))
+#Total_RewardsT  
+
+#Total_RewardsT
+bTotal_RV_T=left_join(bTotal.visitsT, bTotal_RewardsT, by="bee")
+index = which(is.na(bTotal_RV_T$Rewards))
+bTotal_RV_T = bTotal_RV_T[-index,]
+colnames(bTotal_RV_T)=c("bee", "Test.Visits", "Test.Rewards")
+#Total_RV_T
+bAvg.VisitsT=summarise(bTotal_RV_T, Test.visits=mean(Test.Visits), Test.reward=mean(Test.Rewards))
+#Avg.VisitsT
+
+bAllVisits=left_join(bTotal_RV,bTotal_RV_T, by="bee") %>%
+  filter(Test.Visits>0)
+#AllVisits
+bAvg.AllVisits=cbind(bAvg.Visits, bAvg.VisitsT)
+bAvg.AllVisits
+
+
+#BeeDataOrig
+#tbl_df(BeeData)
+#Simple_BeeData=
+ # slice(BeeData,41:109) %>%
+#  group_by(bee)
+
+bBeeData=full_join(bAllVisits, bee.info.blue, by="bee")
+bBeeData =filter(bBeeData, bee !="A2-25-66-01-0B-00-12-E0")
+bBeeData[is.na(bBeeData)] <- 0 
+#BeeData
+select(bBeeData, bee:Treatment_Type) %>%
+  slice(1:50) %>%
+  group_by(Treatment_Type) %>%
+  summarise(AvgTreatVisits=mean(Treatment.Visits), AvgTreatRewards=mean(Treatment.Rewards),AvgTestVisits=mean(Test.Visits), AvgTestRewards=mean(Test.Rewards))
+
+bFull.Data=rbind(bFull.Treatment1, bFull.Test1)
+bFull.Data=filter(bFull.Data, bee !="A2-25-66-01-0B-00-12-E0")
+#making a little data frame to assign Treatment and Test to the calendar dates
+Day=c("treatment", "test")
+date=c("2020.2.28", "2020.2.29")     
+bdaydate=cbind(Day, date)
+bdaydate=as.data.frame(bdaydate)
+
+
+colors=read.csv("Flower color data Summer SI learning envt trials.csv")
+names(colors) <- c("flower", "reader", "Day", "color", "reward")
+#colors
+
+#need to join dayDate to full trial, then join treatment types and colors to all of that
+
+bFull.Data=left_join(bFull.Data,bdaydate,by="date") 
+#%>% select(-Days)
+colnames(bFull.Data)[colnames(bFull.Data)=="Day.x"] <- "Day"
+
+
+#adding in treatment types
+bFull.Data.Treatments=full_join(bFull.Data, bee.info.blue, by="bee")
+
+#adding in colors
+bFull.Data.Colorss=full_join(bFull.Data.Treatments,colors, by=c("flower", "Day"))
+bFull.Data.Colors= bFull.Data.Colorss[1:23047,]
+
+```
 
 
 
 
 
 
+
+```{r}
+# Generate a plot of color names which R knows about.
+#++++++++++++++++++++++++++++++++++++++++++++
+# cl : a vector of colors to plots
+# bg: background of the plot
+# rot: text rotation angle
+#usage=showCols(bg="gray33")
+showCols <- function(cl=colors(), bg = "gray",
+                     cex = 0.75, rot = 30) {
+    m <- ceiling(sqrt(n <-length(cl)))
+    length(cl) <- m*m; cm <- matrix(cl, m)
+    require("grid")
+    grid.newpage(); vp <- viewport(w = .92, h = .92)
+    grid.rect(gp=gpar(fill=bg))
+    grid.text(cm, x = col(cm)/m, y = rev(row(cm))/m, rot = rot,
+              vp=vp, gp=gpar(cex = cex, col = cm))
+}
+
+showCols(cl= colors(), bg="white", rot=30, cex=0.5)
+```
 
 
 
