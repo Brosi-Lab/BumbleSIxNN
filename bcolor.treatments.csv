@@ -1,0 +1,5 @@
+﻿color,pre.post,new.reward
+blue.treatment,pre,RewardDay1
+green.treatment,pre,Not.RewardDay1
+blue.test,post,Not.RewardDay1
+violet.test,post,RewardDay1

@@ -704,12 +704,12 @@ summary(SIapplicationGLM3)
 ######
 NNxSIapplicationGLM2=glmer(cbind(blue, not.blue)~pre.post*Neonic*Social_Cue+(1|bee), family=binomial, data=sum.colorcast)
 summary(NNxSIapplicationGLM2)
-#Anova(NNxSIapplicationGLM2)
+Anova(NNxSIapplicationGLM2)
 
 ```
 
 
-
+*this is the main model running and data analysis for my data, both GLMM and ANOVA
 
 
 
@@ -875,12 +875,13 @@ naive.plot <- ggplot(naive.RewardsPerTreatment, aes(group=Social_Cue, color = So
 
 naive.plot
 
-NoPestPlot <- ggplot(all.RewardsPerTreatmentNoPesticides, aes(group=Social_Cue, color = Social_Cue, y = SumBlueRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Social_Cue),size=3, position=pd) + labs(x="Day of Foraging", y="Proportion of Visits to Blue Flowers", title="Proportion of Visits to Blue Flowers for Bees Trained With Different Social Cues") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue() + geom_hline(yintercept=0.5,linetype="dashed", color = "black") + scale_fill_discrete(name = "Social Cue Treatment")+scale_color_manual(values = c(control="darkgoldenrod", honest="cornflowerblue", misleading="darkolivegreen4"))
+NoPestPlot <- ggplot(all.RewardsPerTreatmentNoPesticides, aes(group=Social_Cue, color = Social_Cue, y = SumBlueRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Social_Cue),size=3, position=pd) + labs(x="Day of Foraging", y="Proportion of Visits to Blue Flowers", title="Proportion of Visits to Rewarding Flowers with Social Cue Training") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue() + geom_hline(yintercept=0.5,linetype="dashed", color = "black") + scale_fill_discrete(name = "Social Cue Treatment")+scale_color_manual(values = c(control="darkgoldenrod", honest="cornflowerblue", misleading="darkolivegreen4")) 
 
 
 #all the same but just for pre
 pre.RewardsPerTreatment=filter(all.RewardsPerTreatment1, pre.post=="pre")
-pre.plot <-ggplot(pre.RewardsPerTreatment, aes(group=Neonic, color=Neonic, y=SumBlueRewards/SumTotalRewards, x=Social_Cue))+ geom_point( position=pd,size=3)  + labs(x="Social Cue", y="Proportion of Visits to Blue Flowers", title="Proportion of Visits to Blue Flowers on Day 1 by Neonicotinoid Exposure") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + scale_color_hue() + scale_color_hue(name="Pesticide Exposure", labels=c("Not Exposed", "Exposed")) + geom_hline(yintercept=0.5,linetype="dashed", color = "black")
+
+pre.plot <-ggplot(pre.RewardsPerTreatment, aes(group=Neonic, color=Neonic, y=SumBlueRewards/SumTotalRewards, x=Social_Cue))+ geom_point( position=pd,size=3)  + labs(x="Social Cue", y="Proportion of Visits to Blue Flowers", title="Visits to Reward Flower on Day 1 by Neonicotinoid Exposure") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + scale_color_hue() + scale_color_hue(name="Pesticide Exposure", labels=c("Not Exposed", "Exposed")) + geom_hline(yintercept=0.5,linetype="dashed", color = "black") + scale_color_manual(values = c(y="green3", n="lightslategrey"), name="Pesticide Exposure", labels=c("Not Exposed", "Exposed"))
 
 post.RewardsPerTreatment=filter(all.RewardsPerTreatment1, pre.post=="post")
 post.plot <-ggplot(post.RewardsPerTreatment, aes(group=Neonic, color=Neonic, y=SumBlueRewards/SumTotalRewards, x=Social_Cue))+ geom_point( position=pd,size=1)  + labs(x="Social Cue", y="Proportion of Visits to Blue Flowers") + theme_minimal() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + scale_color_hue() + scale_color_hue(name="Pesticide Exposure", labels=c("Not Exposed", "Exposed"))
@@ -900,6 +901,68 @@ pre.plot
 
 
 ```
+
+#How many bees?
+```{r}
+#overall
+totalbees=count(all.colordata, bee)
+#totalbees=259
+
+#no pesticides total
+totalNoPest= all.colordata %>% 
+  filter(Neonic=="n") %>%
+  count(bee)
+#totalNoPest=170
+
+#Pesticides total
+totalPest= all.colordata %>% 
+  filter(Neonic=="y") %>%
+  count(bee)
+#totalPest=86
+
+
+#control, no 
+ControlNoPest= all.colordata %>% 
+  filter(Neonic=="n") %>%
+  filter(Social_Cue=="control") %>%
+  count(bee)
+#ControlNoPest = 56
+#control, yes
+ControlPest= all.colordata %>% 
+  filter(Neonic=="y") %>%
+  filter(Social_Cue=="control") %>%
+  count(bee)
+#ControlPest=30
+
+
+#honest, no
+HonestNoPest= all.colordata %>% 
+  filter(Neonic=="n") %>%
+  filter(Social_Cue=="honest") %>%
+  count(bee)
+#HonestNoPest = 55
+#honest, yes
+HonestPest= all.colordata %>% 
+  filter(Neonic=="y") %>%
+  filter(Social_Cue=="honest") %>%
+  count(bee)
+#HonestPest
+
+#miselading, no
+MislNoPest= all.colordata %>% 
+  filter(Neonic=="n") %>%
+  filter(Social_Cue=="misleading") %>%
+  count(bee)
+#MislNoPest=58
+#misleading, yes
+MislPest= all.colordata %>% 
+  filter(Neonic=="y") %>%
+  filter(Social_Cue=="misleading") %>%
+  count(bee)
+#MislPest=26
+```
+
+
 
 #Reward Differences
 How did treatments affect how "well" the bees did?
@@ -1316,7 +1379,7 @@ boot.ci(NpoM.boot, conf=0.95, type="bca")
 pre.plot <-ggplot(pre.RewardsPerTreatment, aes(group=Neonic, color=Neonic, y=SumBlueRewards/SumTotalRewards, x=Social_Cue))+ geom_point( position=pd,size=3)  + labs(x="Social Cue", y="Proportion of Visits to Blue Flowers", title="Proportion of Visits to Blue Flowers on Day 1 by Neonicotinoid Exposure") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + scale_color_hue() + scale_color_hue(name="Pesticide Exposure", labels=c("Not Exposed", "Exposed")) + geom_hline(yintercept=0.5,linetype="dashed", color = "black")
 
 
-RewardsPlotAvgdCI=ggplot(data=c3, aes(x=pre.post, y=AvgPrePost, group=Neonic, color=Neonic)) + geom_point(size=3) + geom_line(size=3) +theme_classic() +facet_grid(.~Social_Cue)+ geom_errorbar(aes(ymin=AvgbootLO, ymax=AvgbootHI, width=.1), position=pd) + scale_color_hue(name="Pesticide Exposure", labels=c("Not Exposed", "Exposed")) + labs(x="Day of Foraging", y="Amount of Sugar-Water Received per Rewarding Flower", title="Number of Sugar-Water Rewards Received")
+RewardsPlotAvgdCI=ggplot(data=c3, aes(x=pre.post, y=AvgPrePost, group=Neonic, color=Neonic)) + geom_point(size=3) + geom_line(size=3) +theme_classic() +facet_grid(.~Social_Cue)+ geom_errorbar(aes(ymin=AvgbootLO, ymax=AvgbootHI, width=.1), position=pd) + scale_color_hue(name="Pesticide Exposure", labels=c("Not Exposed", "Exposed")) + labs(x="Day of Foraging", y="Amount of Sugar-Water Received per Rewarding Flower", title="Number of Sugar-Water Rewards Received") + scale_color_manual(values = c(y="green3", n="lightslategrey"), name="Pesticide Exposure", labels=c("Not Exposed", "Exposed"))
 
 #geom_errorbar(aes(ymin=bootLO, ymax=bootHI, width=.1), position=pd)
 
@@ -1642,46 +1705,7 @@ AllbeeDay1Plot=ggplot(data=Allbee.Order.Day1, aes(group=bee, color=bee, x=Order,
 #AllbeeDay1Plot
 #+ coord_cartesian(xlim = c(1,5))
 ```
-all.colormelt=melt(meltable.colordata)
 
-all.colorcast=dcast(all.colormelt, bee+Colony+Neonic+Social_Cue+pre.post~new.color, fun.aggregate=sum)
-
-all.sum.colordata=all.colordata %>%
-  group_by(Neonic, Treatment_Type, Colony, color)  %>%
-  summarise(sums=sum(reward.x))
-
-Trtmnt=read.csv("Trtmnt.csv")
-all.colordata=full_join(all.colordata,Trtmnt, by="Treatment_Type")
-
-meltable.colordata=all.colordata %>%
-  select(bee, Colony, Neonic, Social_Cue, reward.x, pre.post,new.color)
-
-meltable.colordata$Colony <-as.character(as.numeric(meltable.colordata$Colony))
-
-
-
-summary(all.colorcast)
-
-
-
-#Switching Flowers
-
-code from Practice.rmd 
-
-sis34=as.matrix(sis33)
-Swatch=c("Start")
-for(i in 2:nrow(sis35)){
-            ## population size is in column 2
-            ## compare pop size to previous pop size and create trend object
-             if(sis35[i,1] != sis35[i-1,1]) Swatch[i] = "Start" else if(sis35[i,4] != sis35[i-1,4]) Swatch[i] = "Switch" else Swatch[i] = "Same"
-}
-Swatch
-#now working on keeping the sister the same
-sis37=cbind(sis35, Swatch)
-sis37
-sis38=as.data.frame(sis37)
-sis38=select(sis38, Sister, State, Children, Order2, Swatch)
-sis38
 
 ```{r}
 Day1orderM=as.matrix(Day1order)
@@ -1874,7 +1898,89 @@ bFull.Data.Treatments=full_join(bFull.Data, bee.info.blue, by="bee")
 bFull.Data.Colorss=full_join(bFull.Data.Treatments,colors, by=c("flower", "Day"))
 bFull.Data.Colors= bFull.Data.Colorss[1:23047,]
 
+#bFull.Data.Colors has all of the visit data with treatments, colors, etc. It has no NAs becuase I resolved those along the way.
+
+#####################
+
+bFull.Data.All= select(bFull.Data.Colors, bee, Neonic, Treatment_Type, reward.x, color, Day, Colony)
+
+
+#Full.Data.All focuses in on columns of interest. Following data manip moves from an "each bee each visit" view to groupings of treatments etc.
+
+#sum of rewards bees got from each color
+bcolor.visits=group_by(bFull.Data.All, color) %>%
+  summarise(Rewards=sum(reward.x))   
+index = which(is.na(bcolor.visits))
+bcolor.visits = bcolor.visits[-index,]
+#head(color.visits)
+
+#i made a table of how to name the colors in last round of analysis, here's a reminder of what it is:
+bcolor.treatments=read.csv("bcolor.treatments.csv")
+bcolor.treatments=tbl_df(bcolor.treatments)
+
+bcolordata=full_join(bFull.Data.All, bcolor.treatments, by="color")
+#colordata
+#summarizing that full data by summing up the rewards for each treatment type
+bsum.colordata=bcolordata  %>% 
+  group_by(Neonic,Treatment_Type, color, Colony) %>% 
+  summarise(sums=sum(reward.x))
+index = which(is.na(bsum.colordata))
+bsum.colordata = bsum.colordata[-index,]
+
+#spreading and melting data...
+btreatment.summaries=spread(bsum.colordata, color, sums)
+# the NAs in the above spreadsheet are 0s
+
+bsum.colordata=select(bcolordata, bee, Neonic, Treatment_Type, reward.x, pre.post, new.reward)
+#sum.colordata
+#sum.colordata is the rawest data that shows all of and each bee-flower visit.
+#colorcast=dcast(sum.colordata, bee + Treatment_Type+pre.post~reward.x+new.color, fun.aggregate = sum)
+#trying to just cast without melting did not work, even when I removes "reward.x"
+
+bsum.colormelt=melt(bsum.colordata)
+#sum.colormelt
+
+
+#casting data
+bsum.colorcast=dcast(bsum.colormelt, bee +  Neonic+ Treatment_Type+pre.post~new.reward, fun.aggregate = sum)
+#sum.colorcast
+head(bsum.colorcast)
+summary(bsum.colorcast)
+
+
+
+#GLMing data
+allblueGLM=glmer(cbind(RewardDay1, Not.RewardDay1)~pre.post*Treatment_Type+(1|bee), family=binomial, data=bsum.colorcast)
+summary(allblueGLM)
+Anova(allblueGLM)
+
+
+
+#plotting
+
+ball.RewardsPerTreatment=bsum.colorcast %>%
+  mutate(RewardingSpacePreference=RewardDay1/(RewardDay1+Not.RewardDay1)) %>%
+  group_by(pre.post,Treatment_Type) %>%
+  summarise(AvgRewardSpacePreference=mean(RewardingSpacePreference), SdRewardSpacePreference=sd(RewardingSpacePreference), SumRewardSpaceRewards=sum(RewardDay1), SumTotalRewards=sum(RewardDay1+Not.RewardDay1)) %>%
+  filter (SumRewardSpaceRewards>0)
+
+#Confidence Intervals
+ball.RpTconfint=binom.confint(x=ball.RewardsPerTreatment$SumRewardSpaceRewards, n=ball.RewardsPerTreatment$SumTotalRewards, conf.level=.95, methods = "agresti-coull")
+ball.RpTconfint
+#selecting the upper and lower bounds from the conf int table to add to RewardsPerTreatment
+ball.RpTUpLow=select(ball.RpTconfint, lower, upper, mean )
+ball.RewardsPerTreatment=bind_cols(ball.RewardsPerTreatment,ball.RpTUpLow)
+
+class(ball.RewardsPerTreatment$pre.post)
+ball.RewardsPerTreatment$pre.post = factor(ball.RewardsPerTreatment$pre.post, levels(factor(ball.RewardsPerTreatment$pre.post))[c(2,1)])
+
+ball.RewardsPerTreatment$Treatment_Type = factor(ball.RewardsPerTreatment$Treatment_Type, levels(factor(ball.RewardsPerTreatment$Treatment_Type))[c(1,3,2)])
+
+ball.plot <- ggplot(ball.RewardsPerTreatment, aes(group=Treatment_Type, color = Treatment_Type, y = SumRewardSpaceRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Treatment_Type),, size=3, position=pd) + labs(x="Day of Foraging", y="Proportion of Visits to Day1 Rewarding Flower", title="Proportion of Visits to Each of Two Blue Flowers") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue() + geom_hline(yintercept=0.5,linetype="dashed", color = "black") + scale_color_manual(values = c(c="darkgoldenrod", h="cornflowerblue", m="darkolivegreen4"), name="Social Cue", labels=c("Control", "Honest", "Misleading"))
+
+ball.plot
 ```
+
 
 
 
