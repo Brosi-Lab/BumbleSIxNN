@@ -692,6 +692,75 @@ head(sum.colorcast)
 summary(sum.colorcast)
 #there are some bees in here that only have one row. That's okay. I mean, it's annoying, but it's to be expected. The missing rows are due to 2 missing data files caused either by a computer glitch or a me glitch
 
+#prepping to run G-test
+b=filter(sum.colorcast, Neonic=="n")
+Gtest.prep= b %>%
+  group_by(Social_Cue, pre.post) %>%
+  summarise(avgBlue=mean(blue), avgNotBlue=mean(not.blue))
+Gtest.prep
+
+#or maybe I should do the sum of blue and not blue?
+Gsumtest.prep= b %>%
+  group_by(Social_Cue, pre.post) %>%
+  summarise(sumBlue=sum(blue), sumNotBlue=sum(not.blue))
+Gsumtest.prep = mutate(Gsumtest.prep, BlueProp=sumBlue/(sumBlue+sumNotBlue))
+BluePropV=as.vector(Gsumtest.prep$BlueProp)
+BluePropV
+
+Gsummatrprep=select(Gsumtest.prep, sumBlue, sumNotBlue)
+gsummatr=as.matrix(Gsummatrprep, header=TRUE)
+gsummatr=gsummatr[,c(2,3)]
+class(gsummatr)
+gsummatr
+
+require(RVAideMemoire)
+#G.test(gsummatr, p = rep(1/length(x), length(x)))
+#G.test(gsummatr)
+#That's not working. So maybe I should have a vector of proportions?
+#require(DescTools)
+obCpo=c(211,236)
+obCpr=c(256, 153)
+obHpo=c(155,161)
+obHpr=c(261,111)
+obMpo=c(213,159)
+obMpr=c(195,228)
+expected=c(0.5,0.5)
+G.test(obCpo, expected)
+#G = 1.3989, df = 1, p-value = 0.2369
+G.test(obCpr, expected)
+#G = 26.22, df = 1, p-value = 3.046e-07   *
+G.test(obHpo, expected)
+#G = 0.11393, df = 1, p-value = 0.7357
+G.test(obHpr, expected)
+#G = 62.24, df = 1, p-value = 3.041e-15   *
+G.test(obMpo, expected)
+#G = 7.8665, df = 1, p-value = 0.005036   *
+G.test(obMpr, expected)
+#G = 2.5771, df = 1, p-value = 0.1084
+
+### --------------------------------------------------------------
+### Crossbill example, G-test goodness-of-fit, p. 55
+#gfrom https://rcompanion.org/rcompanion/b_04.html
+# resource http://www.biostathandbook.com/gtestgof.html#chivsg
+### --------------------------------------------------------------
+
+#observed = c(1752, 1895)    # observed frequencies
+#expected = c(0.5, 0.5)      # expected proportions
+
+#library(DescTools)
+
+#GTest(x=observed,
+#      p=expected,
+#      correct="none")            # "none" "williams" "yates"
+ 
+#Log likelihood ratio (G-test) goodness of fit test
+
+#G = 5.6085, X-squared df = 1, p-value = 0.01787
+
+ 
+
+
+ 
 
 #GLMing data
 NNapplicationGLM2=glmer(cbind(blue, not.blue)~pre.post*Neonic+(1|bee), family=binomial, data=sum.colorcast)
@@ -701,17 +770,28 @@ a=filter(sum.colorcast, pre.post == "pre")
 SIapplicationGLM3=glmer(cbind(blue, not.blue)~Social_Cue+(1|bee), family=binomial, data=a)
 summary(SIapplicationGLM3)
 
+
+
+
 ######
 NNxSIapplicationGLM2=glmer(cbind(blue, not.blue)~pre.post*Neonic*Social_Cue+(1|bee), family=binomial, data=sum.colorcast)
 summary(NNxSIapplicationGLM2)
 Anova(NNxSIapplicationGLM2)
 
+#just the social cues, for paper #1
+SIapplicationGLM2=glmer(cbind(blue, not.blue)~pre.post*Social_Cue+(1|bee), family=binomial, data=b)
+summary(SIapplicationGLM2)
+Anova(SIapplicationGLM2)
 ```
 
 
 *this is the main model running and data analysis for my data, both GLMM and ANOVA
 
-
+pre.postpre                        0.9902     0.1689   5.864 4.52e-09 *** (so, on average, Blue bias was pos correlated with day 1 (duh) )
+Social_Cuehonest                   0.1018     0.2762   0.368    0.713    (so, across both days, honest bees were slightly (but not significantly) correlated with Blue bias )
+Social_Cuemisleading               0.6333     0.2700   2.346    0.019 *  (so, across both days, midles bees and blue bias were slightly signigicantly correlated)
+pre.postpre:Social_Cuehonest       0.3013     0.2561   1.176    0.239    
+pre.postpre:Social_Cuemisleading  -1.6908     0.2424  -6.976 3.04e-12 *** (so, mislead bees on Day one  were NEGATIVELY correlated with blue bias compared to everyone else)
 
 #Shit gets useful around here
 
@@ -724,6 +804,8 @@ Adding April and Summer Data together
 And also adding in October (findme)
 
 ```{r}
+
+
 
 #OctFull.Data.Colors
 
@@ -782,7 +864,15 @@ Check5=filter(just.naive, Colony=="4")
 Colony.glmm=glmer(cbind(blue,not.blue)~pre.post*Social_Cue*Colony+(1|bee), family=binomial, data=just.naive)
 summary(Colony.glmm)
 
+SI.glmm=glmer(cbind(blue,not.blue)~pre.post*Social_Cue+(1|bee) + (1|Colony), family=binomial, data=just.naive)
+summary(SI.glmm)
+Anova(SI.glmm)
+
 #Prepping data to graph
+
+Day12labs <- c("Day 1", "Day 2")
+#+ scale_x_discrete(labels= Day12labs)
+
 
 all.RewardsPerTreatment=all.colorcast %>%
   mutate(BluePreference=blue/(blue+not.blue)) %>%
@@ -875,7 +965,7 @@ naive.plot <- ggplot(naive.RewardsPerTreatment, aes(group=Social_Cue, color = So
 
 naive.plot
 
-NoPestPlot <- ggplot(all.RewardsPerTreatmentNoPesticides, aes(group=Social_Cue, color = Social_Cue, y = SumBlueRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Social_Cue),size=3, position=pd) + labs(x="Day of Foraging", y="Proportion of Visits to Blue Flowers", title="Proportion of Visits to Rewarding Flowers with Social Cue Training") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue() + geom_hline(yintercept=0.5,linetype="dashed", color = "black") + scale_fill_discrete(name = "Social Cue Treatment")+scale_color_manual(values = c(control="darkgoldenrod", honest="cornflowerblue", misleading="darkolivegreen4")) 
+NoPestPlot <- ggplot(all.RewardsPerTreatmentNoPesticides, aes(group=Social_Cue, color = Social_Cue, y = SumBlueRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Social_Cue),size=3, position=pd) + labs(x="Day of Foraging", y="Proportion of Visits to Blue Flowers", title="Proportion of Visits to Rewarding Flowers with Social Cue Training") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue() + geom_hline(yintercept=0.5,linetype="dashed", color = "black") + scale_fill_discrete(name = "Social Cue Treatment")+scale_color_manual(values = c(control="darkgoldenrod", honest="cornflowerblue", misleading="darkolivegreen4")) + scale_x_discrete(labels= Day12labs)
 
 
 #all the same but just for pre
@@ -946,7 +1036,7 @@ HonestPest= all.colordata %>%
   filter(Neonic=="y") %>%
   filter(Social_Cue=="honest") %>%
   count(bee)
-#HonestPest
+#HonestPest=30
 
 #miselading, no
 MislNoPest= all.colordata %>% 
@@ -1740,7 +1830,7 @@ SwitchDay1Plot
 #has no confidence intervals, hold on.
 
 #calculating confidence intervals
-#Day1SwitchConfInt=binom.confint(x=Spread.SwitchDay1$Switch, n=Spread.SwitchDay1$Total, conf.level=.95, methods="agresti-coull")
+Day1SwitchConfInt=binom.confint(x=Spread.SwitchDay1$Switch, n=Spread.SwitchDay1$Total, conf.level=.95, methods="agresti-coull")
 Day1SwitchConfIntSelect=select(Day1SwitchConfInt, lower, upper)
 Spread.SwitchDay1=bind_cols(Spread.SwitchDay1, Day1SwitchConfIntSelect)
 
@@ -1976,7 +2066,11 @@ ball.RewardsPerTreatment$pre.post = factor(ball.RewardsPerTreatment$pre.post, le
 
 ball.RewardsPerTreatment$Treatment_Type = factor(ball.RewardsPerTreatment$Treatment_Type, levels(factor(ball.RewardsPerTreatment$Treatment_Type))[c(1,3,2)])
 
-ball.plot <- ggplot(ball.RewardsPerTreatment, aes(group=Treatment_Type, color = Treatment_Type, y = SumRewardSpaceRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Treatment_Type),, size=3, position=pd) + labs(x="Day of Foraging", y="Proportion of Visits to Day1 Rewarding Flower", title="Proportion of Visits to Each of Two Blue Flowers") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue() + geom_hline(yintercept=0.5,linetype="dashed", color = "black") + scale_color_manual(values = c(c="darkgoldenrod", h="cornflowerblue", m="darkolivegreen4"), name="Social Cue", labels=c("Control", "Honest", "Misleading"))
+Day12labs <- c("Day 1", "Day 2")
+
+
+
+ball.plot <- ggplot(ball.RewardsPerTreatment, aes(group=Treatment_Type, color = Treatment_Type, y = SumRewardSpaceRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Treatment_Type),, size=3, position=pd) + labs(x="Day of Foraging", y="Proportion of Visits to Day1 Rewarding Flower", title="Proportion of Visits to Each of Two Blue Flowers")+ scale_x_discrete(labels= Day12labs) + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue() + geom_hline(yintercept=0.5,linetype="dashed", color = "black") + scale_color_manual(values = c(c="darkgoldenrod", h="cornflowerblue", m="darkolivegreen4"), name="Social Cue", labels=c("Control", "Honest", "Misleading"))
 
 ball.plot
 ```
