@@ -699,11 +699,16 @@ Gtest.prep= b %>%
   summarise(avgBlue=mean(blue), avgNotBlue=mean(not.blue))
 Gtest.prep
 
-#or maybe I should do the sum of blue and not blue?
+#Berry look here for Bee Paper 1#
+#G tests
+
+require(plotrix) #for std error function
+
 Gsumtest.prep= b %>%
   group_by(Social_Cue, pre.post) %>%
-  summarise(sumBlue=sum(blue), sumNotBlue=sum(not.blue))
-Gsumtest.prep = mutate(Gsumtest.prep, BlueProp=sumBlue/(sumBlue+sumNotBlue))
+  summarise(sumBlue=sum(blue), sumNotBlue=sum(not.blue))%>%
+  mutate(BlueProp=sumBlue/(sumBlue+sumNotBlue)) %>%
+  mutate(BluePropSE=std.error(BlueProp))
 BluePropV=as.vector(Gsumtest.prep$BlueProp)
 BluePropV
 
@@ -864,7 +869,9 @@ Check5=filter(just.naive, Colony=="4")
 Colony.glmm=glmer(cbind(blue,not.blue)~pre.post*Social_Cue*Colony+(1|bee), family=binomial, data=just.naive)
 summary(Colony.glmm)
 
-SI.glmm=glmer(cbind(blue,not.blue)~pre.post*Social_Cue+(1|bee) + (1|Colony), family=binomial, data=just.naive)
+
+#Berry look here for Bee Paper 1#
+SI.glmm=glmer(cbind(blue,not.blue)~pre.post*Social_Cue+(1|Colony/bee), family=binomial, data=just.naive)
 summary(SI.glmm)
 Anova(SI.glmm)
 
