@@ -2028,18 +2028,23 @@ bsum.colordata = bsum.colordata[-index,]
 btreatment.summaries=spread(bsum.colordata, color, sums)
 # the NAs in the above spreadsheet are 0s
 
-bsum.colordata=select(bcolordata, bee, Neonic, Treatment_Type, reward.x, pre.post, new.reward)
+bsum.colordata=select(bcolordata, Colony, bee, Neonic, Treatment_Type, reward.x, pre.post, new.reward)
 #sum.colordata
 #sum.colordata is the rawest data that shows all of and each bee-flower visit.
 #colorcast=dcast(sum.colordata, bee + Treatment_Type+pre.post~reward.x+new.color, fun.aggregate = sum)
 #trying to just cast without melting did not work, even when I removes "reward.x"
+
+
+bsum.colordata$Colony <-as.character(as.numeric(bsum.colordata$Colony))
+
+
 
 bsum.colormelt=melt(bsum.colordata)
 #sum.colormelt
 
 
 #casting data
-bsum.colorcast=dcast(bsum.colormelt, bee +  Neonic+ Treatment_Type+pre.post~new.reward, fun.aggregate = sum)
+bsum.colorcast=dcast(bsum.colormelt, bee + Colony+ Neonic+ Treatment_Type+pre.post~new.reward, fun.aggregate = sum)
 #sum.colorcast
 head(bsum.colorcast)
 summary(bsum.colorcast)
@@ -2047,7 +2052,8 @@ summary(bsum.colorcast)
 
 
 #GLMing data
-allblueGLM=glmer(cbind(RewardDay1, Not.RewardDay1)~pre.post*Treatment_Type+(1|bee), family=binomial, data=bsum.colorcast)
+allblueGLM=glmer(cbind(RewardDay1, Not.RewardDay1)~pre.post*Treatment_Type+(1|Colony/bee), family=binomial, data=bsum.colorcast)
+
 summary(allblueGLM)
 Anova(allblueGLM)
 
@@ -2082,7 +2088,53 @@ ball.plot <- ggplot(ball.RewardsPerTreatment, aes(group=Treatment_Type, color = 
 ball.plot
 ```
 
+G tests for all-blue trials
+```{r}
 
+
+#Berry look here for Bee Paper 1#
+#G tests for all-blue trials
+
+
+
+bGsumtest.prep= bsum.colorcast %>%
+  group_by(Treatment_Type, pre.post) %>%
+  summarise(sumDay1RewFlower=sum(RewardDay1), sumDay1NotRewFlower=sum(Not.RewardDay1))%>%
+  mutate(RewDay1Prop=sumDay1RewFlower/(sumDay1RewFlower+sumDay1NotRewFlower)) %>%
+  mutate(RewDay1PropSE=std.error(RewDay1Prop))
+
+BluePropV=as.vector(Gsumtest.prep$BlueProp)
+BluePropV
+
+bGsummatrprep=select(bGsumtest.prep, sumDay1RewFlower, sumDay1NotRewFlower)
+bgsummatr=as.matrix(bGsummatrprep, header=TRUE)
+bgsummatr=bgsummatr[,c(2,3)]
+class(bgsummatr)
+bgsummatr
+
+
+
+bobCpo=c(49,43)
+bobCpr=c(75,19)
+bobHpo=c(28,44)
+bobHpr=c(51,27)
+bobMpo=c(25,24)
+bobMpr=c(42,23)
+expected=c(0.5,0.5)
+G.test(bobCpo, expected)
+#G =0.39158      , df = 1, p-value =0.5315 
+G.test(bobCpr, expected)
+#G =35.684      , df = 1, p-value =2.3e-09 
+G.test(bobHpo, expected)
+#G =3.584     , df = 1, p-value = 0.05829
+G.test(bobHpr, expected)
+#G =7.5058      , df = 1, p-value =0.0615 
+G.test(bobMpo, expected)
+#G =0.02041      , df = 1, p-value =0.8864 
+G.test(bobMpr, expected)
+#G =5.6358      , df = 1, p-value =0.0176 
+
+```
 
 
 
