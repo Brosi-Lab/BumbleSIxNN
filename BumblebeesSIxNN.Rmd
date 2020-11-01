@@ -2083,7 +2083,7 @@ Day12labs <- c("Day 1", "Day 2")
 
 
 
-ball.plot <- ggplot(ball.RewardsPerTreatment, aes(group=Treatment_Type, color = Treatment_Type, y = SumRewardSpaceRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Treatment_Type),, size=3, position=pd) + labs(x="Day of Foraging", y="Proportion of Visits to Day1 Rewarding Flower", title="Proportion of Visits to Each of Two Blue Flowers")+ scale_x_discrete(labels= Day12labs) + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue() + geom_hline(yintercept=0.5,linetype="dashed", color = "black") + scale_color_manual(values = c(c="darkgoldenrod", h="cornflowerblue", m="darkolivegreen4"), name="Social Cue", labels=c("Control", "Honest", "Misleading"))
+ball.plot <- ggplot(ball.RewardsPerTreatment, aes(group=Treatment_Type, color = Treatment_Type, y = SumRewardSpaceRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Treatment_Type), size=3, position=pd) + labs(x="Day of Foraging", y="Proportion of Visits to Day1 Rewarding Flower", title="Proportion of Visits to Each of Two Blue Flowers")+ scale_x_discrete(labels= Day12labs) + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue() + geom_hline(yintercept=0.5,linetype="dashed", color = "black") + scale_color_manual(values = c(c="darkgoldenrod", m="darkolivegreen4", h="cornflowerblue"), name="Social Cue", labels=c("Control", "Misleading", "Honest"))
 
 ball.plot
 ```
@@ -2107,6 +2107,7 @@ BluePropV=as.vector(Gsumtest.prep$BlueProp)
 BluePropV
 
 bGsummatrprep=select(bGsumtest.prep, sumDay1RewFlower, sumDay1NotRewFlower)
+bGsummatrprep
 bgsummatr=as.matrix(bGsummatrprep, header=TRUE)
 bgsummatr=bgsummatr[,c(2,3)]
 class(bgsummatr)
