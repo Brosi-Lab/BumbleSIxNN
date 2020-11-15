@@ -2137,6 +2137,36 @@ G.test(bobMpr, expected)
 
 ```
 
+#How many all blue bees?
+```{r}
+#overall
+btotalbees=count(bcolordata, bee)
+#btotalbees=28 rows
+
+
+#control 
+bControl= bcolordata %>% 
+  filter(Treatment_Type=="c") %>%
+  count(bee)
+#bControl=14 rows
+
+
+
+#honest, no
+bHonest= bcolordata %>% 
+  filter(Treatment_Type=="h") %>%
+  count(bee)
+#HonestNoPest = 6
+
+
+#miselading
+bMisleading= bcolordata %>% 
+  filter(Treatment_Type=="m") %>%
+  count(bee)
+#MislNoPest=7
+
+```
+
 
 
 
