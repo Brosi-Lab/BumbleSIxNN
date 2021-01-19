@@ -856,10 +856,30 @@ all.colorcast=dcast(all.colormelt, bee+Colony+Neonic+Social_Cue+pre.post~new.col
 summary(all.colorcast)
 
 #Running models!!!
+#Berry look here for Bee Paper 2
 
-All.NNxSI.glmm=glmer(cbind(blue,not.blue)~pre.post*Neonic*Social_Cue+(1|bee), family=binomial, data=all.colorcast)
+#Both days, social cues and neonic treatment on blue bias
+All.NNxSI.glmm=glmer(cbind(blue,not.blue)~pre.post*Neonic*Social_Cue+(1|Colony/bee), family=binomial, data=all.colorcast)
 summary(All.NNxSI.glmm)
+Anova(All.NNxSI.glmm)
 
+#just day 1, neonic (and social cue) on blue bias
+just.Day1=all.colorcast %>%
+  filter(pre.post=="pre")
+
+Day1.NNxSI.glmm=glmer(cbind(blue,not.blue)~Neonic*Social_Cue+(1|Colony/bee), family=binomial, data=just.Day1)
+summary(Day1.NNxSI.glmm)
+Anova(Day1.NNxSI.glmm)
+#no effect, but I think that's becuase the effect for misleading bees opposes the effect on honest bees
+
+#just day 1, neonic on blue bias for misleading treatment bees
+
+just.Day1M=just.Day1 %>%
+  filter(Social_Cue=="misleading")
+
+Day1M.NN.glmm=glmer(cbind(blue,not.blue)~Neonic+(1|Colony/bee), family=binomial, data=just.Day1M)
+summary(Day1M.NN.glmm)
+Anova(Day1M.NN.glmm)
 
 just.naive=all.colorcast %>%
   filter(Neonic=="n")
@@ -874,6 +894,7 @@ summary(Colony.glmm)
 SI.glmm=glmer(cbind(blue,not.blue)~pre.post*Social_Cue+(1|Colony/bee), family=binomial, data=just.naive)
 summary(SI.glmm)
 Anova(SI.glmm)
+
 
 #Prepping data to graph
 
@@ -911,6 +932,7 @@ all.RewardsPerTreatment1=bind_cols(all.RewardsPerTreatment1,all.RpTUpLow)
 class(all.RewardsPerTreatment1$pre.post)
 all.RewardsPerTreatment1$pre.post = factor(all.RewardsPerTreatment1$pre.post, levels(factor(all.RewardsPerTreatment1$pre.post))[c(2,1)])
 
+#Re-ordering factors a la Alva's advice
 all.RewardsPerTreatment1$Social_Cue = factor(all.RewardsPerTreatment1$Social_Cue, levels(factor(all.RewardsPerTreatment1$Social_Cue))[c(1,3,2)])
 
 #Graphing
@@ -936,7 +958,7 @@ names(PestiFacetLabels) <- c("n", "y")
 # Create the plot
 
 
-all.plot2 <- ggplot(all.RewardsPerTreatment1, aes(group=Social_Cue, color = Social_Cue, y = SumBlueRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Social_Cue),, size=3, position=pd) + labs(x="Day of Foraging", y="Proportion of Visits to Blue Flowers", title="Proportion of Visits to Blue Flowers by Day") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue() + facet_grid(.~Neonic, labeller = labeller(Neonic = PestiFacetLabels)) + geom_hline(yintercept=0.5,linetype="dashed", color = "black")
+all.plot2 <- ggplot(all.RewardsPerTreatment1, aes(group=Social_Cue, color = Social_Cue, y = SumBlueRewards/SumTotalRewards, x = pre.post)) + geom_point( position=pd,size=3) + geom_line(aes(group = Social_Cue),, size=3, position=pd) + labs(x="Day of Foraging", y="Proportion of Visits to Blue Flowers", title="Proportion of Visits to Blue Flowers by Day") + theme_classic() + geom_errorbar(aes(ymin=lower, ymax=upper, width=.1), position=pd) + coord_cartesian(xlim = c(1.4,1.9), ylim = c(0.3,0.9))+ scale_color_hue() + facet_grid(.~Neonic, labeller = labeller(Neonic = PestiFacetLabels)) + geom_hline(yintercept=0.5,linetype="dashed", color = "black")+scale_color_manual(values = c(control="darkgoldenrod", honest="cornflowerblue", misleading="darkolivegreen4"))
 
 
 
@@ -998,6 +1020,14 @@ pre.plot
 
 
 ```
+
+#Donna Maney's Anovas
+You will want to reconsider some claims that are currently not supported by your data analysis. Specifically, you say that the bees used the social cues. We don’t currently have evidence of that, at least that I could find in the paper. To show that the bees are using social cues on day 1, you'll need to show that the honest bees are making more visits to the rewarded flowers than the control group, and/or the misled bees are making fewer. I would do a one-way ANOVA on the day 1 data, with social cue (3 levels) as the fixed factor and preference for the rewarded flower as the response variable. Then, if  you find a significant effect of social cue on preference, you would perform pairwise tests (control vs. honest and control vs. misleading). Just looking at the graphs, it’s possible you might have an effect for Study 1 but it does not look like the bees in Study 2 are using the cues. It seems like a big problem that the honest-cued bees are not preferring the rewarded flowers as much as the control bees.
+```{r}
+
+```
+
+
 
 #How many bees?
 ```{r}
@@ -1782,12 +1812,12 @@ SameDay2OrderPlot
 
 
 
-Day1OrderPlot=ggplot(data=Spread.Day1order, aes(group=Social_Cue, color=Social_Cue, x=Order, y=BluePref)) + facet_grid(.~Neonic) + geom_point(position=pd, size=1) + geom_line(aes(group=Social_Cue), position=pd) +theme_classic()  + labs(title="Bees' Preference for Blue Flowers on Day 1")
+Day1OrderPlot=ggplot(data=Spread.Day1order, aes(group=Social_Cue, color=Social_Cue, x=Order, y=BluePref)) + facet_grid(.~Neonic) + geom_point(position=pd, size=1) + geom_line(aes(group=Social_Cue), position=pd) +theme_classic()  + labs(title="Bees' Preference for Blue Flowers on Day 1")+ geom_hline(yintercept=0.5,linetype="dashed", color = "black")+scale_color_manual(values = c(control="darkgoldenrod", honest="cornflowerblue", misleading="darkolivegreen4"))
 Day1OrderPlot
 
 #same plot as above, but artificialy limited to the average number of visits that at leat 10 bees made (i.e. up to 6 on x axis)
 
-SameDay1OrderPlot=ggplot(data=Spread.Day1order, aes(group=Social_Cue, color=Social_Cue, x=Order, y=BluePref)) + facet_grid(.~Neonic) + geom_point(position=pd, size=1) + geom_line(aes(group=Social_Cue), position=pd) +theme_classic() + coord_cartesian(xlim = c(1,5))+ labs(title="Bees' Preference for Blue Flowers on Day 1, Choices 1-5")
+SameDay1OrderPlot=ggplot(data=Spread.Day1order, aes(group=Social_Cue, color=Social_Cue, x=Order, y=BluePref)) + facet_grid(.~Neonic) + geom_point(position=pd, size=1) + geom_line(aes(group=Social_Cue), position=pd) +theme_classic() + coord_cartesian(xlim = c(1,5))+ labs(title="Bees' Preference for Blue Flowers on Day 1, Choices 1-5")+ geom_hline(yintercept=0.5,linetype="dashed", color = "black")+scale_color_manual(values = c(control="darkgoldenrod", honest="cornflowerblue", misleading="darkolivegreen4"))
 SameDay1OrderPlot
 
 
@@ -1801,6 +1831,7 @@ Allbee.Order.Day1=select(Day1order, bee, Neonic, Social_Cue, Order,color)
 AllbeeDay1Plot=ggplot(data=Allbee.Order.Day1, aes(group=bee, color=bee, x=Order, y=color)) + facet_grid(Neonic~Social_Cue) + geom_point( size=1) + geom_line(aes(group=bee)) +theme_classic()+ guides(color="none")
 #AllbeeDay1Plot
 #+ coord_cartesian(xlim = c(1,5))
+#herehere
 ```
 
 
@@ -2166,6 +2197,55 @@ bMisleading= bcolordata %>%
 #MislNoPest=7
 
 ```
+
+
+#"posthoc" glmms for bee paper 1
+don't call these posthoc comparisons, just report that "I divided the data to assess differences in training groups in the pre and post condition. we conducted separate followup anaylses byt training tpes. specicaflly, in the pre condiditon, we compared each of the social info treatments to the control andlaso to the honest (to see if theyre really following social cues). In the post data, we want to see if mislead bees behave differently from the other two groups."
+-berry says to do separate glmms, one for pre and one for post (so social info cue is the only variable, and control is the reference variable. I'll get two p values (one for honest and one for misleading, each is compared to control)(ideally both contrasts will be significant). next, for the social cue factor, run the levels (or relevel) command and say ref=misleading- so then the next model will compare control and honest each to misleading. 
+
+
+```{r}
+
+preNaive=all.colorcast %>%
+  filter(pre.post=="pre") %>%
+  filter(Neonic=="n")
+
+preNaive.glmm=glmer(cbind(blue,not.blue)~Social_Cue+(1|Colony/bee), family=binomial, data=preNaive)
+summary(preNaive.glmm)
+Anova(preNaive.glmm)
+#misleading is sig diff from control p =0.0165, honest is not sig dif p=0.1408
+
+postNaive=all.colorcast %>%
+  filter(pre.post=="post") %>%
+  filter(Neonic=="n")
+
+postNaive.glmm=glmer(cbind(blue,not.blue)~Social_Cue+(1|Colony/bee), family=binomial, data=postNaive)
+summary(postNaive.glmm)
+Anova(postNaive.glmm)
+#misleading p=0.156, honest p=0.918
+
+
+#can i relevel the factors?
+#all.RewardsPerTreatment1$Social_Cue = factor(all.RewardsPerTreatment1$Social_Cue, levels(factor(all.RewardsPerTreatment1$Social_Cue))[c(1,3,2)])
+
+preNaive$Social_Cue=factor(preNaive$Social_Cue, levels(factor(preNaive$Social_Cue))[c(3,1,2)])
+  
+preNaive2.glmm=glmer(cbind(blue,not.blue)~Social_Cue+(1|Colony/bee), family=binomial, data=preNaive)
+summary(preNaive2.glmm)
+#control(p=0.016454) and honest(p=0.000153) both significantly different from misleading
+
+postNaive$Social_Cue=factor(postNaive$Social_Cue, levels(factor(postNaive$Social_Cue))[c(3,1,2)])
+
+postNaive2.glmm=glmer(cbind(blue,not.blue)~Social_Cue+(1|Colony/bee), family=binomial, data=postNaive)
+summary(postNaive2.glmm)
+#neither is significant control p=0.156, honest p=0.202
+
+```
+
+
+
+
+
 
 
 
