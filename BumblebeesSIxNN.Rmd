@@ -1883,6 +1883,39 @@ Day1SwitchPlot
     #I would need the number of visits to green after a bee has been to both blue and green.
 ```
 
+#First reward, no Neonics
+```{r}
+FirstFlowerDay1=Spread.Day1order %>%
+  filter(Order==1, Neonic=="n") %>%
+  mutate(Allfirsts=sum(blue.treatment+green.treatment))
+
+FirstFlowerDay2=Spread.Day2order %>%
+  filter(Order==1, Neonic=="n") %>%
+  mutate(Allfirsts=sum(blue.test+violet.test))
+
+
+#Confidence Intervals
+FirstFlower.Day1.confint=binom.confint(x=FirstFlowerDay1$blue.treatment, n=FirstFlowerDay1$Allfirsts, conf.level=.95, methods = "agresti-coull")
+FirstFlower.Day1.confint
+#selecting the upper and lower bounds from the conf int table to add to RewardsPerTreatment
+FirstFlower.Day1.confint.uplow=select(FirstFlower.Day1.confint, lower, upper, mean )
+FirstFlowerDay1=bind_cols(FirstFlowerDay1,FirstFlower.Day1.confint.uplow)
+
+FirstFlower.Day2.confint=binom.confint(x=FirstFlowerDay2$blue.test, n=FirstFlowerDay1$Allfirsts, conf.level=.95, methods = "agresti-coull")
+FirstFlower.Day2.confint
+#selecting the upper and lower bounds from the conf int table to add to RewardsPerTreatment
+FirstFlower.Day2.confint.uplow=select(FirstFlower.Day2.confint, lower, upper, mean )
+FirstFlowerDay2=bind_cols(FirstFlowerDay2,FirstFlower.Day2.confint.uplow)
+
+FirstFlowerDay1Plot<- ggplot(FirstFlowerDay1, aes(y = BluePref, x = Social_Cue)) + geom_point( position=pd,size=3) + labs(x="Social Cue", y="Proportion of Bees that First Visited Blue Flower", title="Proportion of Foragers that Chose Blue Flower on First Visit to Flower on Day 1") + theme_classic() + scale_color_hue() + geom_hline(yintercept=0.5,linetype="dashed", color = "black")+ geom_errorbar(aes(ymin=lower, ymax=upper, width=.1))
+
+FirstFlowerDay1Plot
+
+FirstFlowerDay2Plot<- ggplot(FirstFlowerDay2, aes(y = BluePref, x = Social_Cue)) + geom_point( position=pd,size=3) + labs(x="Social Cue", y="Proportion of Bees that First Visited Blue Flower", title="Proportion of Foragers that Chose Blue Flower on First Visit to Flower on Day 2") + theme_classic() + scale_color_hue() + geom_hline(yintercept=0.5,linetype="dashed", color = "black")+ geom_errorbar(aes(ymin=lower, ymax=upper, width=.1))
+
+FirstFlowerDay2Plot
+
+```
 
 
 #What if all the flowers are blue?
